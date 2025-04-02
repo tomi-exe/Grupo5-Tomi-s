@@ -7,6 +7,6 @@ const UserSchema = new mongoose.Schema({
   rut: { type: String, required: true, unique: true }, // Nuevo campo para el RUT
 });
 
-const User = mongoose.models.User || mongoose.model("User1", UserSchema);
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 export default User;
