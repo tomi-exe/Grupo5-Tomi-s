@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET || "secret");
 
-// 🔹 Generar un JWT
+// 🔹 Generate a JWT
 export async function generateToken(payload: any) {
+  console.log("Generating token for payload:", payload); // Debugging log
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -12,32 +13,56 @@ export async function generateToken(payload: any) {
     .sign(secretKey);
 }
 
-// 🔹 Verificar un JWT
+// 🔹 Verify a JWT
 export async function verifyToken(token: string) {
   try {
+    console.log("Verifying token:", token); // Debugging log
     const { payload } = await jwtVerify(token, secretKey, {
       algorithms: ["HS256"],
     });
+    console.log("Token verified. Payload:", payload); // Debugging log
     return payload;
-  } catch {
+  } catch (error) {
+    console.error("Token verification failed:", error); // Debugging log
     return null;
   }
 }
 
-// 🔹 Guardar sesión en cookies
+// 🔹 Save session in cookies
 export async function setSession(user: any) {
-  const token = await generateToken({ user });
-  cookies().set("session", token, { httpOnly: true, maxAge: 3600 });
+  try {
+    console.log("Setting session for user:", user); // Debugging log
+    const token = await generateToken({ user });
+    console.log("Generated token:", token); // Debugging log
+    (await cookies()).set("session", token, { httpOnly: true, maxAge: 3600 });
+    console.log("Session set successfully."); // Debugging log
+  } catch (error) {
+    console.error("Error setting session:", error); // Debugging log
+  }
 }
 
-// 🔹 Obtener sesión desde cookies
+// 🔹 Get session from cookies
 export async function getSession() {
-  const token = cookies().get("session")?.value;
-  if (!token) return null;
-  return await verifyToken(token);
+  try {
+    const token = (await cookies()).get("session")?.value;
+    console.log("Retrieved token from cookies:", token); // Debugging log
+    if (!token) return null;
+    const session = await verifyToken(token);
+    console.log("Verified session:", session); // Debugging log
+    return session;
+  } catch (error) {
+    console.error("Error getting session:", error); // Debugging log
+    return null;
+  }
 }
 
-// 🔹 Cerrar sesión
+// 🔹 Logout
 export async function logout() {
-  cookies().set("session", "", { expires: new Date(0) });
+  try {
+    console.log("Logging out user."); // Debugging log
+    (await cookies()).set("session", "", { expires: new Date(0) });
+    console.log("User logged out successfully."); // Debugging log
+  } catch (error) {
+    console.error("Error during logout:", error); // Debugging log
+  }
 }

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-let isConnected = false; // Track the connection status
+let isConnected = false;
 
 export async function connectToDB() {
   if (isConnected) {
@@ -9,26 +9,19 @@ export async function connectToDB() {
   }
 
   try {
-    const uri = process.env.MONGODB_URI; // Ensure this environment variable is set
+    const uri = process.env.MONGODB_URI;
     if (!uri) {
       throw new Error("MONGODB_URI is not defined in environment variables");
     }
 
     await mongoose.connect(uri, {
-      dbName: "prograpro", // Replace with your actual database name
+      dbName: "prograpro", // Replace with your database name
     });
 
     isConnected = true;
     console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
-    throw error; // Re-throw the error to handle it in the calling function
+    throw error;
   }
-}
-
-export function getDB() {
-  if (!isConnected) {
-    throw new Error("Database is not connected. Call connectToDB first.");
-  }
-  return mongoose.connection.db;
 }

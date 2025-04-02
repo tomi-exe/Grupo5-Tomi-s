@@ -1,20 +1,35 @@
-// app/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/app/lib/lib"; // Importando tus funciones de sesión
+import { verifyToken } from "@/app/lib/auth";
 
 export async function middleware(request: NextRequest) {
-  const session = await getSession(request.cookies.get("session")?.value);
+  console.log("Middleware executed for:", request.nextUrl.pathname); // Debugging log
 
-  // Si no hay sesión, redirigir al login
-  if (!session) {
+  const token = request.cookies.get("session")?.value;
+  console.log("Token found in cookies:", token); // Debugging log
+
+  if (!token) {
+    console.log("No token found. Redirecting to /login");
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Si hay sesión, continuar con la petición
-  return NextResponse.next();
+  try {
+    const session = await verifyToken(token);
+    console.log("Session from token:", session); // Debugging log
+
+    if (!session) {
+      console.log("Invalid token. Redirecting to /login");
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    console.log("Valid session. Proceeding to:", request.nextUrl.pathname);
+    return NextResponse.next();
+  } catch (error) {
+    console.error("Error verifying token:", error); // Debugging log
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 }
 
-// Configurar las rutas que este middleware debe aplicar
+// Apply middleware to specific routes
 export const config = {
-  matcher: ["/events", "/protected/*"], // Rutas a las que protegerás
+  matcher: ["/my-tickets"], // Correctly protect the /my-tickets route
 };
