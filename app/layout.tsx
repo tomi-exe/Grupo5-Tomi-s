@@ -58,7 +58,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <button
               className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#233748] text-white text-sm font-bold leading-normal tracking-[0.015em]"
             >
-              <span className="truncate">Create event</span>
+              <span className="truncate">Registrar</span>
+            </button>
+            <button
+              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#fff] text-black text-sm font-bold leading-normal tracking-[0.015em]"
+            >
+              <span className="truncate">Iniciar sesion</span>
             </button>
             <div
               className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
