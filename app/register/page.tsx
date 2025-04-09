@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // New state for confirming password
   const [name, setName] = useState("");
   const [rut, setRut] = useState(""); // New state for RUT
   const [error, setError] = useState<string | null>(null);
@@ -13,7 +14,6 @@ export default function RegisterPage() {
 
   // Function for validating the RUT
   const validateRut = (rut: string) => {
-    // Eliminar puntos y guiones
     const cleanRut = rut.replace(/[.-]/g, "");
     if (cleanRut.length < 8 || cleanRut.length > 9) return false;
 
@@ -39,6 +39,13 @@ export default function RegisterPage() {
     return dv === validDv;
   };
 
+  // Function for validating password strength
+  const validatePassword = (password: string) => {
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -46,7 +53,21 @@ export default function RegisterPage() {
 
     // Validate the RUT before sending to the server
     if (!validateRut(rut)) {
-      setError("El RUT ingresado no es válido.");
+      setError("The RUT entered is not valid.");
+      return;
+    }
+
+    // Validate password strength
+    if (!validatePassword(password)) {
+      setError(
+        "Password must be at least 8 characters long, include an uppercase letter, a number, and a special character."
+      );
+      return;
+    }
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -70,20 +91,20 @@ export default function RegisterPage() {
       } else {
         const result = await res.json();
         console.error("Error response from server:", result);
-        setError(result.message || "Hubo un error al registrar el usuario.");
+        setError(result.message || "There was an error registering the user.");
       }
     } catch (err) {
       console.error("Error during fetch:", err);
-      setError("Hubo un error al registrar el usuario.");
+      setError("There was an error registering the user.");
     }
   };
 
   return (
     <div>
-      <h2>Registro</h2>
+      <h2>Register</h2>
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="name">Nombre</label>
+          <label htmlFor="name">Name</label>
           <input
             id="name"
             type="text"
@@ -93,7 +114,7 @@ export default function RegisterPage() {
           />
         </div>
         <div>
-          <label htmlFor="email">Correo electrónico</label>
+          <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
@@ -103,12 +124,22 @@ export default function RegisterPage() {
           />
         </div>
         <div>
-          <label htmlFor="password">Contraseña</label>
+          <label htmlFor="password">Password</label>
           <input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             required
           />
         </div>
@@ -123,7 +154,7 @@ export default function RegisterPage() {
           />
         </div>
         {error && <div style={{ color: "red" }}>{error}</div>}
-        <button type="submit">Registrarse</button>
+        <button type="submit">Register</button>
       </form>
     </div>
   );
