@@ -33,3 +33,16 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/my-tickets"], // Correctly protect the /my-tickets route
 };
+
+const cookieParser = require('cookie-parser'); // Si estás usando cookies
+
+app.use(cookieParser());
+
+app.use((req, res, next) => {
+    res.cookie('miCookieGlobal', 'valorGlobal', {
+        secure: true,
+        httpOnly: true,
+        sameSite: 'Strict',
+    });
+    next();
+});
