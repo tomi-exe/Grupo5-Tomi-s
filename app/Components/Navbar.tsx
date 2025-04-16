@@ -2,9 +2,9 @@ import Link from "next/link";
 
 export default function Navbar() {
   return (
-    <nav className="bg-purple-700 text-white p-4 flex justify-between">
-      <div className="font-bold text-lg">🎫 TicketZone</div>
-      <div className="space-x-4">
+    <nav className="bg-purple-700 text-white p-4 flex flex-col sm:flex-row sm:justify-between items-center">
+      <div className="font-bold text-lg mb-2 sm:mb-0">🎫 TicketZone</div>
+      <div className="flex flex-wrap justify-center gap-4 sm:justify-end">
         <Link href="/">Home</Link>
         <Link href="/register">Register</Link>
         <Link href="/events">Events</Link>
@@ -15,3 +15,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
