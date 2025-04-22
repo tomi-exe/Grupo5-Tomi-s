@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import Navbar from "./Components/Navbar";
 import Login from "./login/login";
-import Tickets from "./my-tickets/tickets";
+import Tickets from "./my-tickets/page";
 import Link from "next/link";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
