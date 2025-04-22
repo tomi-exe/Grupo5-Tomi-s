@@ -14,7 +14,7 @@ export default function Logout() {
         router.push("/login");
       })
       .catch((error) => {
-        console.error("Error during logout:", error);
+        console.error("Logout failed");
       });
   }, [router]);
 

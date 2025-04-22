@@ -8,7 +8,7 @@ export default function Navbar() {
         <Link href="/">Home</Link>
         <Link href="/register">Register</Link>
         <Link href="/events">Events</Link>
-        <Link href="/tickets">My Tickets</Link>
+        <Link href="/my-tickets">My Tickets</Link>
         <Link href="/login">Login</Link>
         <Link href="/logout">Logout</Link>
       </div>

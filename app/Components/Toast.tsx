@@ -2,14 +2,22 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
-const toastVariants = {
+type ToastType = "success" | "error" | "warning" | "info";
+
+interface ToastProps {
+  message: string;
+  type?: ToastType;
+  onClose: () => void;
+}
+
+const toastVariants: Record<ToastType, string> = {
   success: "bg-green-500 text-white",
   error: "bg-red-500 text-white",
   warning: "bg-yellow-500 text-black",
   info: "bg-blue-500 text-white",
 };
 
-const Toast = ({ message, type = "info", onClose }) => {
+const Toast: React.FC<ToastProps> = ({ message, type = "info", onClose }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -25,16 +33,22 @@ const Toast = ({ message, type = "info", onClose }) => {
   );
 };
 
-const ToastProvider = () => {
-  const [toasts, setToasts] = useState([]);
+interface ToastData {
+  id: number;
+  message: string;
+  type: ToastType;
+}
 
-  const addToast = (message, type = "info") => {
+const ToastProvider: React.FC = () => {
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  const addToast = (message: string, type: ToastType = "info") => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => removeToast(id), 5000);
   };
 
-  const removeToast = (id) => {
+  const removeToast = (id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
@@ -51,7 +65,7 @@ const ToastProvider = () => {
         ))}
       </AnimatePresence>
 
-      {/* Example Buttons for Testing */}
+      {/* Botones de prueba */}
       <div className="fixed bottom-4 left-4 space-x-2">
         <button
           className="bg-green-500 text-white px-3 py-2 rounded"
@@ -83,3 +97,4 @@ const ToastProvider = () => {
 };
 
 export default ToastProvider;
+
