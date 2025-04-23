@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="px-4 py-12 mx-auto w-full max-w-7xl">
@@ -10,10 +12,11 @@ export default function Home() {
           Explore a variety of live experiences, from concerts and sports to arts and theatre.
           Find the perfect event tailored to your interests.
         </p>
-
-        <button className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded">
+        <Link href="/events" className="mt-6">
+          <button className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded">
           Browse events
-        </button>
+          </button>
+        </Link>
       </section>
 
       <section className="mt-12">
