@@ -1,18 +1,84 @@
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <nav className="bg-rgb(17 26 34 / var(--tw-bg-opacity, 1)) text-white p-4 flex flex-col sm:flex-row sm:justify-between items-center">
-      <div className="font-bold text-lg mb-2 sm:mb-0">🎫 TicketZone</div>
-      <div className="flex flex-wrap justify-center gap-4 sm:justify-end">
-        <Link href="/">Home</Link>
-        <Link href="/register">Register</Link>
-        <Link href="/events">Events</Link>
-        <Link href="/my-tickets">My Tickets</Link>
-        <Link href="/login">Login</Link>
-        <Link href="/logout">Logout</Link>
+    <nav className="bg-[#111a22] text-white p-4">
+      <div className="flex justify-between items-center">
+        <div className="font-bold text-3xl pb-4">🎫 TicketZone</div>
+        <button
+          onClick={toggleMenu}
+          className="sm:hidden text-white focus:outline-none"
+        >
+          {isMenuOpen ? (
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16m-7 6h7"
+              />
+            </svg>
+          )}
+        </button>
+      </div>
+      <div
+        className={`mt-4 sm:mt-0 sm:flex sm:items-center sm:justify-end ${
+          isMenuOpen ? "block" : "hidden"
+        }`}
+      >
+        <Link
+          href="/"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
+        >
+          INICIO
+        </Link>
+        <Link
+          href="/events"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
+        >
+          EVENTOS
+        </Link>
+        <Link
+          href="/my-tickets"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
+        >
+          MIS TICKETS
+        </Link>
+        <Link
+          href="/logout"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
+        >
+          SALIR
+        </Link>
       </div>
     </nav>
   );
 }
-
