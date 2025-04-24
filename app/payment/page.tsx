@@ -8,6 +8,7 @@ export default function PaymentPage() {
   const searchParams = useSearchParams();
   const event = searchParams.get("event");
   const price = searchParams.get("price");
+  const disp = searchParams.get("disp");
 
   const [cardNumber, setCardNumber] = useState("");
   const [name, setName] = useState("");
@@ -16,7 +17,7 @@ export default function PaymentPage() {
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, price: Number(price) }),
+      body: JSON.stringify({ event, price: Number(price) , disp: Number(disp)}),
     });
 
     if (res.ok) {
@@ -32,6 +33,7 @@ export default function PaymentPage() {
         <h1 className="text-xl font-bold mb-4 text-center">Pasarela de Pago Ficticia</h1>
         <p className="mb-4">Evento: {event}</p>
         <p className="mb-4">Precio: ${price}</p>
+        <p className="mb-4">Disponibilidad: {disp}</p>
         <input
           type="text"
           placeholder="Nombre del titular"
