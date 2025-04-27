@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Loading from "../Components/Loading";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [rut, setRut] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const validateRut = (rut: string) => {
@@ -46,6 +48,8 @@ export default function RegisterPage() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -58,15 +62,22 @@ export default function RegisterPage() {
       } else {
         const data = await res.json();
         setError(data.message || "Error al registrar usuario");
+        setIsLoading(false);
       }
     } catch (err) {
       setError("Error interno del servidor");
+      setIsLoading(false);
     }
   };
 
+  if (isLoading) return <Loading text="Registrando..." />;
+
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-4">
-      <form onSubmit={handleSubmit} className="bg-[#192734] p-6 rounded shadow-md w-full max-w-md">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#192734] p-6 rounded shadow-md w-full max-w-md"
+      >
         <h1 className="text-2xl font-bold mb-6 text-center">Registro</h1>
 
         <input
