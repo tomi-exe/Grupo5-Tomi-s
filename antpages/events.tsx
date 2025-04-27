@@ -1,18 +1,18 @@
-import { getSession } from "@/app/lib/lib";
-import { redirect } from "next/navigation";
-import Layout from "@/Components/Layout";
-
-export default async function Events() {
-  const session = await getSession();
-
-  if (!session) {
-    redirect("/login"); // Redirigir si el usuario no está autenticado
-  }
-
+export default function Login() {
   return (
-    <Layout>
-      <h1 className="text-2xl font-bold">Eventos Disponibles</h1>
-      <p className="mt-2">Aquí irá el listado de conciertos y actividades.</p>
-    </Layout>
+    <div className="p-6">
+      <div className="max-w-md mx-auto mt-10">
+        <h1 className="text-2xl font-bold mb-4">Iniciar Sesión</h1>
+        <form className="space-y-4">
+          <input type="email" placeholder="Email" className="w-full p-2 border rounded" />
+          <input type="password" placeholder="Contraseña" className="w-full p-2 border rounded" />
+          <button type="submit" className="w-full bg-purple-700 text-white p-2 rounded">
+            Entrar
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
+
+

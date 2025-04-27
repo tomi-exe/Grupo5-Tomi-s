@@ -3,7 +3,7 @@ import React from "react";
 import { QRCode } from "react-qrcode-logo";
 
 const QRTest = () => {
-  // Datos del ticket
+
   const ticketData = {
     event: "Concierto de Rock",
     ticketNumber: "123456789",
@@ -13,7 +13,7 @@ const QRTest = () => {
     time: "20:00",
   };
 
-  // Covert datas to JSON string for QR code
+
   const ticketDataString = JSON.stringify(ticketData);
 
   return (

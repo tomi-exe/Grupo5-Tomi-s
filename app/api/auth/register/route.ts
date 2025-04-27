@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectToDB } from "../../../lib/mongodb"; // Asegúrate de que esta ruta sea correcta
-import User from "@/models/User"; // Importa correctamente el modelo de usuario
+import { connectToDB } from "../../../lib/mongodb"; 
+import User from "@/models/User"; 
 import bcrypt from "bcrypt";
 
-// Función para validar el RUT
+
 const validateRut = (rut: string) => {
   const cleanRut = rut.replace(/[.-]/g, "");
   if (cleanRut.length < 8 || cleanRut.length > 9) return false;
@@ -33,9 +33,9 @@ const validateRut = (rut: string) => {
 export async function POST(req: Request) {
   try {
     const { email, password, name, rut } = await req.json();
-    console.log("Request body:", { email, name, rut }); // Debugging input, excludes password for safety
+    console.log("Request body:", { email, name, rut }); 
 
-    // Validar campos requeridos
+    
     if (!email || !password || !name || !rut) {
       console.log("Missing required fields");
       return NextResponse.json(

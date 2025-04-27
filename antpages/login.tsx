@@ -1,8 +1,6 @@
-import Layout from '@/Components/Layout'
-
 export default function Login() {
   return (
-    <Layout>
+    <div className="p-6">
       <div className="max-w-md mx-auto mt-10">
         <h1 className="text-2xl font-bold mb-4">Iniciar Sesión</h1>
         <form className="space-y-4">
@@ -13,6 +11,7 @@ export default function Login() {
           </button>
         </form>
       </div>
-    </Layout>
-  )
+    </div>
+  );
 }
+

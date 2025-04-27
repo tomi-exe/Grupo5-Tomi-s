@@ -65,7 +65,7 @@ const ToastProvider: React.FC = () => {
         ))}
       </AnimatePresence>
 
-      {/* Botones de prueba */}
+      {}
       <div className="fixed bottom-4 left-4 space-x-2">
         <button
           className="bg-green-500 text-white px-3 py-2 rounded"

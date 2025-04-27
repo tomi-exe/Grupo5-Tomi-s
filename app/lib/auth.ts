@@ -46,7 +46,7 @@ export async function setSession(user: SessionUser) {
   });
 }
 
-// Obtener sesión desde cookie
+
 export async function getSession(): Promise<{ user: SessionUser } | null> {
   const sessionCookie = (await cookies()).get("session");
   const token = sessionCookie?.value;
@@ -55,7 +55,7 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
   return await verifyToken(token);
 }
 
-// Cerrar sesión
+
 export async function logout() {
   (await cookies()).set("session", "", {
     expires: new Date(0),
