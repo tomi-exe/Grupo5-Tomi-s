@@ -6,26 +6,26 @@ export default function Events() {
   const router = useRouter();
 
   const events = [
-    { id: 1, name: "Concierto Coldplay", price: 20000, disp:2000,icon: "🎤" },
-    { id: 2, name: "Festival de Jazz", price: 15000, disp:2000,icon: "🎷" },
-    { id: 3, name: "Stand-Up Comedy Show", price: 12000, disp:2000,icon: "🎭" },
-    { id: 4, name: "Orquesta Sinfónica", price: 25000, disp:2000,icon: "🎻" },
-    { id: 5, name: "Concierto Coldplay", price: 20000, disp:2000,icon: "🎤" },
-    { id: 6, name: "Festival de Jazz", price: 15000, disp:2000,icon: "🎷" },
-    { id: 7, name: "Stand-Up Comedy Show", price: 12000, disp:2000,icon: "🎭" },
-    { id: 8, name: "Orquesta Sinfónica", price: 25000, disp:2000,icon: "🎻" },
-    { id: 9, name: "Concierto Coldplay", price: 20000, disp:2000, icon: "🎤" },
-    { id: 10, name: "Festival de Jazz", price: 15000, disp:2000,icon: "🎷" },
-    { id: 11, name: "Stand-Up Comedy Show", price: 12000, disp:2000,icon: "🎭" },
-    { id: 12, name: "Orquesta Sinfónica", price: 25000, disp:2000,icon: "🎻" },
-    { id: 13, name: "Concierto Coldplay", price: 20000, disp:2000,icon: "🎤" },
-    { id: 14, name: "Festival de Jazz", price: 15000, disp:2000,icon: "🎷" },
-    { id: 15, name: "Stand-Up Comedy Show", price: 12000,disp:2000, icon: "🎭" },
-    { id: 16, name: "Orquesta Sinfónica", price: 25000, disp:2000,icon: "🎻" },
+    { id: 1, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
+    { id: 2, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
+    { id: 3, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
+    { id: 4, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
+    { id: 5, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
+    { id: 6, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
+    { id: 7, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
+    { id: 8, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
+    { id: 9, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
+    { id: 10, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
+    { id: 11, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
+    { id: 12, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
+    { id: 13, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
+    { id: 14, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
+    { id: 15, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
+    { id: 16, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
   ];
 
   const handleBuy = (eventName: string, price: number, disp: number) => {
-    router.push(`/payment?event=${eventName}&price=${price}$disp=${disp}`);
+    router.push(`/payment?event=${encodeURIComponent(eventName)}&price=${price}&disp=${disp}`);
   };
 
   return (
@@ -64,3 +64,4 @@ export default function Events() {
     </div>
   );
 }
+

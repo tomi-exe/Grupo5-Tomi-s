@@ -11,14 +11,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const { event, price } = await req.json();
-    if (!event || !price) {
+    const { event, price, disp } = await req.json();
+    if (!event || !price || disp === undefined) {
       return NextResponse.json({ message: "Datos incompletos" }, { status: 400 });
     }
 
     const ticket = new Ticket({
       event,
       price,
+      disp,
       userId: session.user.id,
     });
 
@@ -47,5 +48,6 @@ export async function GET() {
     return NextResponse.json({ message: "Error interno" }, { status: 500 });
   }
 }
+
 
 
