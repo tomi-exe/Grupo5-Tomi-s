@@ -20,9 +20,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
     }
 
-    // 🔥 CORRECCIÓN: Extraer solo lo necesario para el token
+
     await setSession({
-      id: user._id.toString(),  // Esto asegura que 'id' esté en el token
+      id: user._id.toString(),
       email: user.email,
       name: user.name,
     });

@@ -8,13 +8,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false); //state for loading
+  const [loading, setLoading] = useState(false); 
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true); // activate loading
+    setLoading(true); 
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -34,13 +34,13 @@ export default function LoginPage() {
       console.error("Login error:", err);
       setError("Error al iniciar sesión");
     } finally {
-      setLoading(false); // deactivate loading after the request is done
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-4">
-      {/* show the loading component if its use state is true */}
+      {}
       {loading ? (
         <Loading text="Iniciando sesión..." />
       ) : (

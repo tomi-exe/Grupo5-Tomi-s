@@ -15,7 +15,7 @@ export async function connectToDB() {
     }
 
     await mongoose.connect(uri, {
-      dbName: "prograpro", // Replace with your database name
+      dbName: "prograpro",
     });
 
     isConnected = true;

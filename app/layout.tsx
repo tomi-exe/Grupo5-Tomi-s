@@ -17,13 +17,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <div className="flex flex-col min-h-screen bg-[#111a22] text-white">
           <header className="flex flex-wrap items-center justify-between border-b border-[#233748] px-6 py-4">
-            {/* Logo y Navbar */}
+            {}
             <div className="flex items-center gap-8">
               <Navbar />
             </div>
-            {/* Barra de búsqueda y botones */}
+            {}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-              {/* Búsqueda */}
+              {}
               <label className="flex items-center rounded-xl bg-[#233748] w-full sm:w-auto">
                 <div className="flex items-center px-3">
                   <svg
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </label>
-              {/* Botones */}
+              {}
               <Link href="/register">
                 <button className="px-4 py-2 bg-[#233748] rounded-xl text-sm font-bold">
                   Registrar
@@ -58,12 +58,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          {/* Contenido principal */}
+          {}
           <main className="flex-1 px-4 py-6 sm:px-10">
             <div className="max-w-4xl mx-auto">{children}</div>
           </main>
 
-          {/* Footer */}
+          {}
           <footer className="bg-[#233748] text-center py-6 text-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:gap-6">
               <a href="#" className="text-[#92b0c9] hover:underline">

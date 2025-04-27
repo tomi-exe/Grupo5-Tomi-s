@@ -10,14 +10,14 @@ const QRTest = () => {
     location: "Estadio Nacional",
   };
 
-  // Convertimos los datos del ticket a formato JSON
+  
   const qrData = JSON.stringify(ticketData);
 
   return (
     <div className="qr-container">
       <h2>Generando Código QR para Ticket</h2>
       <QRCode
-        value={qrData} // Datos del ticket codificados en el QR
+        value={qrData} 
         size={256}
         fgColor="#ffffff"
       />

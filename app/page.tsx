@@ -21,7 +21,7 @@ export default function Home() {
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold text-white">Tendencias</h2>
-        {/* Aquí iría tu lista de eventos destacada */}
+        {}
       </section>
     </main>
   );
