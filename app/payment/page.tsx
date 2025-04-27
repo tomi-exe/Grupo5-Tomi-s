@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Loading from "@/app/Components/Loading"; // Import correcto
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -12,13 +13,18 @@ export default function PaymentPage() {
 
   const [cardNumber, setCardNumber] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // Estado para loading
 
   const handleConfirm = async () => {
+    setIsLoading(true); // Activar Loading Screen
+
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, price: Number(price) , disp: Number(disp)}),
+      body: JSON.stringify({ event, price: Number(price), disp: Number(disp) }),
     });
+
+    setIsLoading(false); // Desactivar Loading Screen
 
     if (res.ok) {
       router.push("/my-tickets");
@@ -26,6 +32,10 @@ export default function PaymentPage() {
       alert("Error al procesar el pago");
     }
   };
+
+  if (isLoading) {
+    return <Loading />; // 🔥 Ahora SIN pasar "text", usa el default "Cargando..."
+  }
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-6">
@@ -58,3 +68,5 @@ export default function PaymentPage() {
     </div>
   );
 }
+
+
