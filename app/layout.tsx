@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </div>
                   <input
                     type="text"
-                    placeholder="Search"
+                    placeholder="Buscar"
                     className="flex-1 bg-transparent px-3 py-2 text-white placeholder:text-[#92b0c9] focus:outline-none"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -69,20 +69,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <footer className="bg-[#233748] text-center py-6 text-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:gap-6">
                 <a href="#" className="text-[#92b0c9] hover:underline">
-                  About Us
+                  Sobre nosotros
                 </a>
                 <a href="#" className="text-[#92b0c9] hover:underline">
-                  Contact
+                  Contacto
                 </a>
                 <a href="#" className="text-[#92b0c9] hover:underline">
-                  Terms of Service
+                  Términos y condiciones
                 </a>
                 <a href="#" className="text-[#92b0c9] hover:underline">
-                  Privacy Policy
+                  Política de privacidad
                 </a>
               </div>
               <p className="mt-4 text-[#92b0c9]">
-                ©2025 Ticketzone. All rights reserved.
+                ©2025 Ticketzone. Todos los derechos reservados.
               </p>
             </footer>
           </div>

@@ -5,12 +5,12 @@ export default function Home() {
     <main className="px-4 py-12 mx-auto w-full max-w-7xl">
       <section className="flex flex-col items-center sm:items-start text-center sm:text-left">
         <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight text-white">
-          Discover your next event
+          Descubre tu proximo evento
         </h1>
 
         <p className="mt-4 text-lg text-gray-300 max-w-prose">
-          Explore a variety of live experiences, from concerts and sports to arts and theatre.
-          Find the perfect event tailored to your interests.
+          Explora una variedad de experiencias en vivo, desde conciertos y deportes hasta
+          arte y teatro. Encuentra el evento perfecto para ti.
         </p>
         <Link href="/events" className="mt-6">
           <button className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded">
