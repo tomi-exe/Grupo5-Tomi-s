@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -39,7 +39,11 @@ interface ToastData {
   type: ToastType;
 }
 
-const ToastProvider: React.FC = () => {
+const ToastContext = createContext<(message: string, type: ToastType) => void>(() => {});
+
+export const useToast = () => useContext(ToastContext);
+
+export const ToastProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const addToast = (message: string, type: ToastType = "info") => {
@@ -53,7 +57,8 @@ const ToastProvider: React.FC = () => {
   };
 
   return (
-    <div>
+    <ToastContext.Provider value={addToast}>
+      {children}
       <AnimatePresence>
         {toasts.map((toast) => (
           <Toast
@@ -64,37 +69,6 @@ const ToastProvider: React.FC = () => {
           />
         ))}
       </AnimatePresence>
-
-      {}
-      <div className="fixed bottom-4 left-4 space-x-2">
-        <button
-          className="bg-green-500 text-white px-3 py-2 rounded"
-          onClick={() => addToast("Compra exitosa", "success")}
-        >
-          Success
-        </button>
-        <button
-          className="bg-red-500 text-white px-3 py-2 rounded"
-          onClick={() => addToast("Error al procesar el pago", "error")}
-        >
-          Error
-        </button>
-        <button
-          className="bg-yellow-500 text-black px-3 py-2 rounded"
-          onClick={() => addToast("Advertencia: Revisar datos ingresados", "warning")}
-        >
-          Warning
-        </button>
-        <button
-          className="bg-blue-500 text-white px-3 py-2 rounded"
-          onClick={() => addToast("Información: Sesión guardada", "info")}
-        >
-          Info
-        </button>
-      </div>
-    </div>
+    </ToastContext.Provider>
   );
 };
-
-export default ToastProvider;
-

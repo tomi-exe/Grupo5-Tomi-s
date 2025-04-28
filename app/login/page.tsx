@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "../Components/Toast"; // Asegúrate de importar correctamente el hook useToast
 import Loading from "../Components/Loading";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const addToast = useToast(); // Hook para mostrar toasts
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true); 
+    setLoading(true);
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -26,13 +26,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
+        addToast("Inicio de sesión exitoso", "success"); // Muestra toast de éxito
         router.push("/events");
       } else {
-        setError(data.error || "Error al iniciar sesión");
+        addToast(data.error || "Error al iniciar sesión", "error"); // Muestra toast de error
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Error al iniciar sesión");
+      addToast("Error al iniciar sesión. Por favor, intenta nuevamente.", "error"); // Muestra toast de error genérico
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-4">
-      {}
       {loading ? (
         <Loading text="Iniciando sesión..." />
       ) : (
@@ -69,8 +69,6 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-
-          {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
 
           <button
             type="submit"
