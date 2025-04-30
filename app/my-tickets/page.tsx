@@ -1,11 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Loading from "../Components/Loading"; // Make sure this path is correct
+import Loading from "../Components/Loading";
+import { QRCode } from "react-qrcode-logo";
+import { X } from "lucide-react";
+
+interface Ticket {
+  _id: string;
+  event: string;
+  price: number;
+  disp: number;
+  userId: string;
+}
 
 export default function MyTickets() {
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -23,7 +34,6 @@ export default function MyTickets() {
         if (!res.ok) {
           const text = await res.text();
           console.error("Error al obtener tickets:", text);
-          // Wait for 2 seconds before hiding loading
           timeoutId = setTimeout(
             () => setLoading(false),
             Math.max(0, 2000 - (Date.now() - start))
@@ -36,7 +46,6 @@ export default function MyTickets() {
       } catch (err) {
         console.error("Error inesperado:", err);
       } finally {
-        // Ensure loading lasts at least 2 seconds
         timeoutId = setTimeout(() => setLoading(false), 2000);
       }
     };
@@ -62,13 +71,45 @@ export default function MyTickets() {
           </p>
         ) : (
           tickets.map((ticket) => (
-            <div key={ticket._id} className="bg-[#192833] p-4 rounded mb-4">
+            <div
+              key={ticket._id}
+              className="bg-[#192833] p-4 rounded mb-4 cursor-pointer hover:bg-[#223344] transition-colors"
+              onClick={() => setSelectedTicket(ticket)}
+            >
               <h2 className="text-lg font-semibold">{ticket.event}</h2>
               <p>Precio: ${ticket.price}</p>
             </div>
           ))
         )}
       </div>
+
+      {selectedTicket && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white text-black rounded-xl p-6 shadow-xl relative max-w-md w-full">
+            <button
+              onClick={() => setSelectedTicket(null)}
+              className="absolute top-2 right-2 text-black"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-center">
+              QR para {selectedTicket.event}
+            </h2>
+            <div className="flex justify-center mb-4">
+              <QRCode
+                value={JSON.stringify(selectedTicket)}
+                size={200}
+                qrStyle="dots"
+                logoImage="https://example.com/logo.png" // Cambiar si usas un logo real
+              />
+            </div>
+            <p className="text-center text-sm">
+              Escanea este código QR para validar tu entrada.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
