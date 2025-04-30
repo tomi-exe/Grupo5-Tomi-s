@@ -1,28 +1,50 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Events() {
   const router = useRouter();
 
-  const events = [
+  const allEvents = [
     { id: 1, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
     { id: 2, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
     { id: 3, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
     { id: 4, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
-    { id: 5, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
-    { id: 6, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
-    { id: 7, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
-    { id: 8, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
-    { id: 9, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
-    { id: 10, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
-    { id: 11, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
-    { id: 12, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
-    { id: 13, name: "Concierto Coldplay", price: 20000, disp: 2000, icon: "🎤" },
-    { id: 14, name: "Festival de Jazz", price: 15000, disp: 2000, icon: "🎷" },
-    { id: 15, name: "Stand-Up Comedy Show", price: 12000, disp: 2000, icon: "🎭" },
-    { id: 16, name: "Orquesta Sinfónica", price: 25000, disp: 2000, icon: "🎻" },
+    { id: 5, name: "Festival de Música Electrónica", price: 30000, disp: 1500, icon: "🎧" },
+    { id: 6, name: "Obra de Teatro Clásica", price: 18000, disp: 800, icon: "🎭" },
+    { id: 7, name: "Torneo de Videojuegos", price: 10000, disp: 500, icon: "🎮" },
+    { id: 8, name: "Charla Motivacional", price: 8000, disp: 1000, icon: "🎤" },
+    { id: 9, name: "Maratón de Cine", price: 15000, disp: 700, icon: "🎬" },
+    { id: 10, name: "Competencia de Baile", price: 12000, disp: 900, icon: "💃" },
+    { id: 11, name: "Exposición de Arte", price: 7000, disp: 600, icon: "🖼️" },
+    { id: 12, name: "Concierto de Rock", price: 25000, disp: 2000, icon: "🎸" },
+    { id: 13, name: "Conferencia de Tecnología", price: 20000, disp: 1000, icon: "💻" },
+    { id: 14, name: "Festival Gastronómico", price: 10000, disp: 1200, icon: "🍴" },
+    { id: 15, name: "Clase de Yoga en Vivo", price: 5000, disp: 300, icon: "🧘" },
+    { id: 16, name: "Taller de Fotografía", price: 15000, disp: 400, icon: "📷" },
+    { id: 17, name: "Fiesta Temática Retro", price: 12000, disp: 800, icon: "📀" },
+    { id: 18, name: "Recital de Poesía", price: 6000, disp: 500, icon: "📖" },
+    { id: 19, name: "Competencia de Canto", price: 14000, disp: 700, icon: "🎤" },
+    { id: 20, name: "Carrera de Autos RC", price: 8000, disp: 400, icon: "🏎️" },
+    { id: 21, name: "Concierto de Jazz Fusión", price: 20000, disp: 1000, icon: "🎷" },
+    { id: 22, name: "Torneo de Ajedrez", price: 5000, disp: 300, icon: "♟️" },
+    { id: 23, name: "Festival de Música Indie", price: 22000, disp: 1500, icon: "🎶" },
+    { id: 24, name: "Noche de Comedia", price: 13000, disp: 600, icon: "😂" },
+    // Agrega más eventos aquí
   ];
+
+  const [search, setSearch] = useState("");
+  const [filteredEvents, setFilteredEvents] = useState(allEvents);
+
+  const handleSearch = (query: string) => {
+    setSearch(query);
+    setFilteredEvents(
+      allEvents.filter((event) =>
+        event.name.toLowerCase().includes(query.toLowerCase())
+      )
+    );
+  };
 
   const handleBuy = (eventName: string, price: number, disp: number) => {
     router.push(`/payment?event=${encodeURIComponent(eventName)}&price=${price}&disp=${disp}`);
@@ -35,33 +57,45 @@ export default function Events() {
         <p className="text-center text-gray-400 mb-8">
           Encuentra tus próximos eventos y compra tus entradas fácilmente.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-2xl transition transform hover:scale-105"
-            >
-              <h2 className="text-xl font-semibold flex items-center mb-2">
-                <span className="mr-2">{event.icon}</span>
-                {event.name}
-              </h2>
-              <p className="text-gray-400 mb-4">
-                Disponibilidad: {event.disp.toLocaleString()}
-              </p>
-              <p className="text-gray-400 mb-4">
-                Precio: ${event.price.toLocaleString()}
-              </p>
-              <button
-                onClick={() => handleBuy(event.name, event.price, event.disp)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition"
-              >
-                Comprar
-              </button>
-            </div>
-          ))}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Buscar eventos..."
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
         </div>
+        {filteredEvents.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredEvents.map((event) => (
+              <div
+                key={event.id}
+                className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-2xl transition transform hover:scale-105"
+              >
+                <h2 className="text-xl font-semibold flex items-center mb-2">
+                  <span className="mr-2">{event.icon}</span>
+                  {event.name}
+                </h2>
+                <p className="text-gray-400 mb-4">
+                  Disponibilidad: {event.disp.toLocaleString()}
+                </p>
+                <p className="text-gray-400 mb-4">
+                  Precio: ${event.price.toLocaleString()}
+                </p>
+                <button
+                  onClick={() => handleBuy(event.name, event.price, event.disp)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition"
+                >
+                  Comprar
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-400">No se encontraron eventos.</p>
+        )}
       </div>
     </div>
   );
 }
-

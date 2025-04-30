@@ -26,26 +26,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               {}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                 {}
-                <label className="flex items-center rounded-xl bg-[#233748] w-full sm:w-auto">
-                  <div className="flex items-center px-3">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24px"
-                      height="24px"
-                      fill="currentColor"
-                      viewBox="0 0 256 256"
-                    >
-                      <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar"
-                    className="flex-1 bg-transparent px-3 py-2 text-white placeholder:text-[#92b0c9] focus:outline-none"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </label>
                 {}
                 <Link href="/register">
                   <button className="px-4 py-2 bg-[#233748] rounded-xl text-sm font-bold">
