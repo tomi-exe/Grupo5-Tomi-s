@@ -89,6 +89,7 @@ export default function MyTickets() {
             <button
               onClick={() => setSelectedTicket(null)}
               className="absolute top-2 right-2 text-black"
+              aria-label="Cerrar"
             >
               <X className="w-6 h-6" />
             </button>
@@ -100,7 +101,7 @@ export default function MyTickets() {
                 value={JSON.stringify(selectedTicket)}
                 size={200}
                 qrStyle="dots"
-                logoImage="https://example.com/logo.png" // Cambiar si usas un logo real
+                logoImage="https://example.com/logo.png" // Cambia por tu logo real si quieres
               />
             </div>
             <p className="text-center text-sm">
@@ -112,4 +113,3 @@ export default function MyTickets() {
     </div>
   );
 }
-

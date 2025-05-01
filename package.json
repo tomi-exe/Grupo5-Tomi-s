@@ -12,6 +12,7 @@
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "framer-motion": "^12.8.0",
+    "html5-qrcode": "^2.3.8",
     "jose": "^6.0.10",
     "lucide-react": "^0.488.0",
     "mongodb": "^6.16.0",
