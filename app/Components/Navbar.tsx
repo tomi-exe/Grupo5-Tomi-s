@@ -73,6 +73,12 @@ export default function Navbar() {
           MIS TICKETS
         </Link>
         <Link
+          href="/purchase-history"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
+        >
+          HISTORIAL DE COMPRAS
+        </Link>
+        <Link
           href="/logout"
           className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
         >
@@ -82,3 +88,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
