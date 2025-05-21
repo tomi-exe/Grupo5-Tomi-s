@@ -7,7 +7,8 @@ import { X } from "lucide-react";
 
 interface Ticket {
   _id: string;
-  event: string;
+  eventName: string;
+  eventDate: string;
   price: number;
   disp: number;
   userId: string;
@@ -76,8 +77,9 @@ export default function MyTickets() {
               className="bg-[#192833] p-4 rounded mb-4 cursor-pointer hover:bg-[#223344] transition-colors"
               onClick={() => setSelectedTicket(ticket)}
             >
-              <h2 className="text-lg font-semibold">{ticket.event}</h2>
+              <h2 className="text-lg font-semibold">{ticket.eventName}</h2>
               <p>Precio: ${ticket.price}</p>
+              <p>Fecha: {new Date(ticket.eventDate).toLocaleString("es-CL")}</p>
             </div>
           ))
         )}
@@ -93,14 +95,14 @@ export default function MyTickets() {
               <X className="w-6 h-6" />
             </button>
             <h2 className="text-xl font-bold mb-4 text-center">
-              QR para {selectedTicket.event}
+              QR para {selectedTicket.eventName}
             </h2>
             <div className="flex justify-center mb-4">
               <QRCode
                 value={JSON.stringify(selectedTicket)}
                 size={200}
                 qrStyle="dots"
-                logoImage="https://example.com/logo.png" // Cambiar si usas un logo real
+                logoImage="https://example.com/logo.png" // Cambia si usas un logo real
               />
             </div>
             <p className="text-center text-sm">
@@ -112,4 +114,3 @@ export default function MyTickets() {
     </div>
   );
 }
-
