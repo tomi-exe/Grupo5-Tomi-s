@@ -12,14 +12,19 @@ export async function POST(req: Request) {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Usuario no encontrado" },
+        { status: 401 }
+      );
     }
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Contraseña incorrecta" },
+        { status: 401 }
+      );
     }
-
 
     await setSession({
       id: user._id.toString(),
@@ -30,7 +35,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Login exitoso" });
   } catch (error) {
     console.error("Error in /api/auth/login:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
   }
 }
-
