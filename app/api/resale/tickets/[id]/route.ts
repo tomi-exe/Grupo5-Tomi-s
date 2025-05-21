@@ -1,23 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
-import mongoose from "mongoose";
-import Ticket from "@/models/Ticket";
 import { connectToDB } from "@/app/lib/mongodb";
-// PUT: Modificar ticket
-export async function PUT(req: NextRequest) {
+import Ticket from "@/models/Ticket";
+
+/**
+ * PUT: Actualiza una reventa existente por ID
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   await connectToDB();
-  const { id, ...update } = await req.json();
-  const ticket = await Ticket.findByIdAndUpdate(id, update, { new: true });
-  if (!ticket)
-    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  return NextResponse.json(ticket);
+  try {
+    const updateData = await request.json();
+    const updated = await Ticket.findByIdAndUpdate(params.id, updateData, {
+      new: true,
+    });
+    if (!updated) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error updating ticket" },
+      { status: 500 }
+    );
+  }
 }
 
-// DELETE: Eliminar ticket
-export async function DELETE(req: NextRequest) {
+/**
+ * DELETE: Elimina una reventa por ID
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   await connectToDB();
-  const { id } = await req.json();
-  const ticket = await Ticket.findByIdAndDelete(id);
-  if (!ticket)
-    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  return NextResponse.json({ success: true });
+  try {
+    const deleted = await Ticket.findByIdAndDelete(params.id);
+    if (!deleted) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ message: "Deleted successfully" });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error deleting ticket" },
+      { status: 500 }
+    );
+  }
 }
