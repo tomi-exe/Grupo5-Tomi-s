@@ -1,21 +1,31 @@
 import mongoose from "mongoose";
 
+// Definición del esquema de Ticket con campos para reventa
 const TicketSchema = new mongoose.Schema(
   {
-    event: { type: String, required: true },
+    // Nombre del evento
+    eventName: { type: String, required: true },
+    // Fecha y hora del evento
+    eventDate: { type: Date, required: true },
+    // Precio de la entrada
     price: { type: Number, required: true },
+    // Cantidad disponible (stock)
     disp: { type: Number, required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    // Usuario propietario o creador del ticket
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    // Indica si el ticket está activo en el mercado de reventa
+    forSale: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-// 🔥 Fuerza recrear el modelo si ya existe en desarrollo
+// Evita recompilar el modelo en desarrollo si ya existe
 const Ticket = mongoose.models.Ticket
-  ? mongoose.deleteModel("Ticket") && mongoose.model("Ticket", TicketSchema)
+  ? mongoose.model("Ticket", TicketSchema)
   : mongoose.model("Ticket", TicketSchema);
 
 export default Ticket;
-
-
-

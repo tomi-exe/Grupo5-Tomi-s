@@ -1,11 +1,8 @@
-// File: app/resale-market/page.tsx
 "use client";
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
 
-import React, { useState, useEffect } from "react"; // React y hooks básicos
-import { format } from "date-fns"; // Formateo de fechas
-import { motion } from "framer-motion"; // Animaciones
-
-// Define la interfaz para los tickets
 interface Ticket {
   _id: string;
   eventName: string;
@@ -17,7 +14,6 @@ export default function ResaleMarketPage() {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch manual sin SWR
   useEffect(() => {
     fetch("/api/resale/tickets")
       .then((res) => {
@@ -28,7 +24,6 @@ export default function ResaleMarketPage() {
       .catch((err) => setError(err.message));
   }, []);
 
-  // Mostrar error
   if (error) {
     return (
       <p className="text-center py-10 text-red-500">
@@ -37,7 +32,6 @@ export default function ResaleMarketPage() {
     );
   }
 
-  // Indicador de carga
   if (!tickets) {
     return (
       <p className="text-center py-10 text-gray-400">
@@ -46,19 +40,17 @@ export default function ResaleMarketPage() {
     );
   }
 
-  // Renderizado de tickets
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-white">Mercado de Reventa</h1>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {tickets.map((ticket) => (
           <motion.div
-            key={ticket._id} // Usa _id de Mongo
+            key={ticket._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Tarjeta básica con Tailwind */}
             <div className="rounded-2xl bg-[#1f2937] p-4 shadow-sm hover:shadow-lg transition-shadow">
               <div className="mb-2">
                 <h2 className="text-lg font-semibold text-white">

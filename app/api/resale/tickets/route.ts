@@ -1,26 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import mongoose from "mongoose";
+import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
 
-// Conexión a la base de datos (ajusta si tienes un helper)
-const MONGODB_URI = process.env.MONGODB_URI || "";
-async function dbConnect() {
-  if (mongoose.connection.readyState < 1) {
-    await mongoose.connect(MONGODB_URI);
-  }
-}
-
-// GET: Listar tickets
+// GET: Listar solo tickets activos en reventa
 export async function GET() {
-  await dbConnect();
-  const tickets = await Ticket.find({});
+  await connectToDB();
+  const tickets = await Ticket.find({ forSale: true });
   return NextResponse.json({ tickets });
 }
 
-// POST: Crear ticket
-export async function POST(req: NextRequest) {
-  await dbConnect();
-  const body = await req.json();
-  const ticket = await Ticket.create(body);
+// POST: Publicar nueva reventa (marca forSale=true)
+export async function POST(request: NextRequest) {
+  await connectToDB();
+  const data = await request.json();
+  const { eventName, eventDate, price, userId } = data;
+  // Validar campos necesarios
+  if (!eventName || !eventDate || price == null || !userId) {
+    return NextResponse.json(
+      { error: "Faltan campos requeridos" },
+      { status: 400 }
+    );
+  }
+  const ticket = await Ticket.create({
+    eventName,
+    eventDate: new Date(eventDate),
+    price,
+    userId,
+    forSale: true,
+  });
   return NextResponse.json(ticket, { status: 201 });
 }
