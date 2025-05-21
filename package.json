@@ -11,7 +11,8 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
-    "framer-motion": "^12.8.0",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.12.1",
     "jose": "^6.0.10",
     "lucide-react": "^0.488.0",
     "mongodb": "^6.16.0",
@@ -20,11 +21,13 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-qrcode-logo": "^3.0.0"
+    "react-qrcode-logo": "^3.0.0",
+    "swr": "^2.3.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^5.0.2",
+    "@types/date-fns": "^2.5.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
