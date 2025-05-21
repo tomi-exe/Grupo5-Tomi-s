@@ -11,13 +11,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const { event, price, disp } = await req.json();
-    if (!event || !price || disp === undefined) {
-      return NextResponse.json({ message: "Datos incompletos" }, { status: 400 });
+    // Cambia aquí los nombres de los campos
+    const { eventName, eventDate, price, disp } = await req.json();
+    if (!eventName || !eventDate || price === undefined || disp === undefined) {
+      return NextResponse.json(
+        { message: "Datos incompletos" },
+        { status: 400 }
+      );
     }
 
     const ticket = new Ticket({
-      event,
+      eventName,
+      eventDate,
       price,
       disp,
       userId: session.user.id,
@@ -25,7 +30,10 @@ export async function POST(req: Request) {
 
     await ticket.save();
 
-    return NextResponse.json({ message: "Compra registrada con éxito", ticket });
+    return NextResponse.json({
+      message: "Compra registrada con éxito",
+      ticket,
+    });
   } catch (error) {
     console.error("Error al registrar ticket:", error);
     return NextResponse.json({ message: "Error interno" }, { status: 500 });
@@ -48,6 +56,3 @@ export async function GET() {
     return NextResponse.json({ message: "Error interno" }, { status: 500 });
   }
 }
-
-
-

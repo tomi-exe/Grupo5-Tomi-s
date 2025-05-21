@@ -5,7 +5,8 @@ import Loading from "../Components/Loading";
 
 interface Ticket {
   _id: string;
-  event: string;
+  eventName: string; // Cambiado de 'event' a 'eventName'
+  eventDate: string; // Puedes mostrar la fecha real del evento
   price: number;
   createdAt: string;
 }
@@ -48,7 +49,9 @@ export default function PurchaseHistory() {
   return (
     <div className="min-h-screen bg-[#111a22] text-white p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-center">Historial de Compras</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          Historial de Compras
+        </h1>
 
         {tickets.length === 0 ? (
           <p className="text-center text-[#92b0c9]">
@@ -70,10 +73,10 @@ export default function PurchaseHistory() {
                     key={ticket._id}
                     className="border-t border-gray-600 hover:bg-[#2c3e50] transition-colors"
                   >
-                    <td className="p-3">{ticket.event}</td>
+                    <td className="p-3">{ticket.eventName}</td>
                     <td className="p-3">${ticket.price}</td>
                     <td className="p-3">
-                      {new Date(ticket.createdAt).toLocaleString("es-CL")}
+                      {new Date(ticket.eventDate).toLocaleString("es-CL")}
                     </td>
                   </tr>
                 ))}
@@ -85,4 +88,3 @@ export default function PurchaseHistory() {
     </div>
   );
 }
-
