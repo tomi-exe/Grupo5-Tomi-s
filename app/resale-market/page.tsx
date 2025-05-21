@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react"; // React es necesario para JSX.
 import useSWR from "swr"; // SWR para obtener y cachear datos de manera eficiente.
 import { format } from "date-fns"; // Función para formatear fechas.
