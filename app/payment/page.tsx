@@ -2,48 +2,58 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import Loading from "@/app/Components/Loading"
+import Loading from "@/app/Components/Loading";
 
 export default function PaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const event = searchParams.get("event");
-  const price = searchParams.get("price");
-  const disp = searchParams.get("disp");
+
+  // Ahora capturamos exactamente lo que espera el backend
+  const eventName = searchParams.get("eventName") || "";
+  const eventDate = searchParams.get("eventDate") || "";
+  const price = Number(searchParams.get("price") || 0);
+  const disp = Number(searchParams.get("disp") || 1);
 
   const [cardNumber, setCardNumber] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirm = async () => {
-    setIsLoading(true); 
+    if (!eventName || !eventDate || price <= 0) {
+      alert("Faltan datos del evento o precio inválido");
+      return;
+    }
+
+    setIsLoading(true);
 
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, price: Number(price), disp: Number(disp) }),
+      body: JSON.stringify({ eventName, eventDate, price, disp }),
     });
 
-    setIsLoading(false); 
+    setIsLoading(false);
 
     if (res.ok) {
       router.push("/my-tickets");
     } else {
-      alert("Error al procesar el pago");
+      const data = await res.json();
+      alert("Error al procesar el pago: " + (data.message || res.status));
     }
   };
 
-  if (isLoading) {
-    return <Loading />; 
-  }
+  if (isLoading) return <Loading />;
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-6">
       <div className="bg-[#192734] p-6 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-xl font-bold mb-4 text-center">Pasarela de Pago Ficticia</h1>
-        <p className="mb-4">Evento: {event}</p>
+        <h1 className="text-xl font-bold mb-4 text-center">
+          Pasarela de Pago Ficticia
+        </h1>
+        <p className="mb-4">Evento: {eventName}</p>
+        <p className="mb-4">Fecha: {new Date(eventDate).toLocaleString()}</p>
         <p className="mb-4">Precio: ${price}</p>
-        <p className="mb-4">Disponibilidad: {disp}</p>
+        <p className="mb-6">Disponibilidad: {disp}</p>
         <input
           type="text"
           placeholder="Nombre del titular"
@@ -68,5 +78,3 @@ export default function PaymentPage() {
     </div>
   );
 }
-
-
