@@ -1,50 +1,69 @@
+// File: app/api/tickets/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
+import { getSession } from "@/app/lib/auth";
 
-/**
- * PUT: Actualiza una reventa existente por ID
- */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  await connectToDB();
-  try {
-    const updateData = await request.json();
-    const updated = await Ticket.findByIdAndUpdate(params.id, updateData, {
-      new: true,
-    });
-    if (!updated) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-    return NextResponse.json(updated);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Error updating ticket" },
-      { status: 500 }
-    );
-  }
+interface Params {
+  params: { id: string };
 }
 
-/**
- * DELETE: Elimina una reventa por ID
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: Params) {
   await connectToDB();
-  try {
-    const deleted = await Ticket.findByIdAndDelete(params.id);
-    if (!deleted) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-    return NextResponse.json({ message: "Deleted successfully" });
-  } catch (error) {
+
+  // 1) Autenticación
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
+  // 2) Filtrar sólo los campos que permitimos mutar
+  const { forSale, price, disp } = await request.json();
+  const updates: Record<string, any> = {};
+  if (forSale !== undefined) updates.forSale = forSale;
+  if (price !== undefined) updates.price = price;
+  if (disp !== undefined) updates.disp = disp;
+
+  // 3) Comprobar propiedad y actualizar
+  const updated = await Ticket.findOneAndUpdate(
+    { _id: params.id, userId: session.user.id },
+    updates,
+    { new: true }
+  );
+  if (!updated) {
     return NextResponse.json(
-      { error: "Error deleting ticket" },
-      { status: 500 }
+      { message: "Ticket no encontrado o no eres propietario" },
+      { status: 404 }
     );
   }
+
+  // 4) Responder uniformemente
+  return NextResponse.json({ ticket: updated }, { status: 200 });
+}
+
+export async function DELETE(request: NextRequest, { params }: Params) {
+  await connectToDB();
+
+  // 1) Autenticación
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
+  // 2) (Opcional) Deslistar en lugar de borrar:
+  const updated = await Ticket.findOneAndUpdate(
+    { _id: params.id, userId: session.user.id },
+    { forSale: false },
+    { new: true }
+  );
+  if (!updated) {
+    return NextResponse.json(
+      { message: "Ticket no encontrado o no eres propietario" },
+      { status: 404 }
+    );
+  }
+
+  // 3) Responder uniformemente
+  return NextResponse.json({ ticket: updated }, { status: 200 });
 }

@@ -1,3 +1,5 @@
+// File: app/payment/page.tsx
+
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -6,25 +8,29 @@ import Loading from "@/app/Components/Loading";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
 
-  // Ahora capturamos exactamente lo que espera el backend
-  const eventName = searchParams.get("eventName") || "";
-  const eventDate = searchParams.get("eventDate") || "";
-  const price = Number(searchParams.get("price") || 0);
-  const disp = Number(searchParams.get("disp") || 1);
+  // Extraemos los parámetros que espera el backend
+  const eventName = params.get("eventName") || "";
+  const eventDate = params.get("eventDate") || "";
+  const priceParam = params.get("price");
+  const dispParam = params.get("disp");
+
+  const price = priceParam ? Number(priceParam) : 0;
+  const disp = dispParam ? Number(dispParam) : 0;
 
   const [cardNumber, setCardNumber] = useState("");
   const [name, setName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
+    // Validación mínima antes de enviar
     if (!eventName || !eventDate || price <= 0) {
       alert("Faltan datos del evento o precio inválido");
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
 
     const res = await fetch("/api/tickets", {
       method: "POST",
@@ -32,17 +38,19 @@ export default function PaymentPage() {
       body: JSON.stringify({ eventName, eventDate, price, disp }),
     });
 
-    setIsLoading(false);
+    setLoading(false);
 
     if (res.ok) {
       router.push("/my-tickets");
     } else {
-      const data = await res.json();
-      alert("Error al procesar el pago: " + (data.message || res.status));
+      const payload = await res.json();
+      alert("Error al procesar el pago: " + (payload.message || res.status));
     }
   };
 
-  if (isLoading) return <Loading />;
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-6">
@@ -50,10 +58,11 @@ export default function PaymentPage() {
         <h1 className="text-xl font-bold mb-4 text-center">
           Pasarela de Pago Ficticia
         </h1>
+
         <p className="mb-4">Evento: {eventName}</p>
-        <p className="mb-4">Fecha: {new Date(eventDate).toLocaleString()}</p>
         <p className="mb-4">Precio: ${price}</p>
-        <p className="mb-6">Disponibilidad: {disp}</p>
+        <p className="mb-4">Disponibilidad: {disp}</p>
+
         <input
           type="text"
           placeholder="Nombre del titular"
@@ -61,13 +70,16 @@ export default function PaymentPage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+
         <input
           type="text"
-          placeholder="Número de tarjeta (ficticio)"
+          placeholder="Número de tarjeta (16 dígitos)"
+          maxLength={16}
           className="w-full p-3 mb-6 rounded bg-[#0d1117] border border-[#233748]"
           value={cardNumber}
-          onChange={(e) => setCardNumber(e.target.value)}
+          onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ""))}
         />
+
         <button
           onClick={handleConfirm}
           className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-semibold"

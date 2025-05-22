@@ -5,6 +5,7 @@ import Loading from "../Components/Loading";
 import { QRCode } from "react-qrcode-logo";
 import { X } from "lucide-react";
 
+// Incluimos forSale en la interfaz
 interface Ticket {
   _id: string;
   eventName: string;
@@ -12,6 +13,7 @@ interface Ticket {
   price: number;
   disp: number;
   userId: string;
+  forSale: boolean;
 }
 
 export default function MyTickets() {
@@ -19,22 +21,24 @@ export default function MyTickets() {
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  // Carga tus tickets (incluye forSale)
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
     const fetchTickets = async () => {
       try {
         const start = Date.now();
-        const res = await fetch("/api/tickets", { method: "GET" });
+        const res = await fetch("/api/tickets", {
+          method: "GET",
+          credentials: "include", // envía cookies de sesión
+        });
 
         if (res.status === 401) {
           window.location.href = "/login";
           return;
         }
-
         if (!res.ok) {
-          const text = await res.text();
-          console.error("Error al obtener tickets:", text);
+          console.error("Error al obtener tickets:", await res.text());
           timeoutId = setTimeout(
             () => setLoading(false),
             Math.max(0, 2000 - (Date.now() - start))
@@ -42,8 +46,8 @@ export default function MyTickets() {
           return;
         }
 
-        const data = await res.json();
-        setTickets(data.tickets);
+        const { tickets } = await res.json();
+        setTickets(tickets);
       } catch (err) {
         console.error("Error inesperado:", err);
       } finally {
@@ -52,11 +56,26 @@ export default function MyTickets() {
     };
 
     fetchTickets();
-
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
+
+  // Función para alternar forSale
+  const toggleSale = async (id: string, currentlyForSale: boolean) => {
+    const res = await fetch(`/api/tickets/${id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ forSale: !currentlyForSale }),
+    });
+    if (!res.ok) {
+      alert("No se pudo actualizar la venta");
+      return;
+    }
+    const { ticket: updated } = await res.json();
+    setTickets((prev) => prev.map((t) => (t._id === id ? updated : t)));
+  };
 
   if (loading) {
     return <Loading text="Cargando tus tickets..." />;
@@ -74,12 +93,30 @@ export default function MyTickets() {
           tickets.map((ticket) => (
             <div
               key={ticket._id}
-              className="bg-[#192833] p-4 rounded mb-4 cursor-pointer hover:bg-[#223344] transition-colors"
-              onClick={() => setSelectedTicket(ticket)}
+              className="bg-[#192833] p-4 rounded mb-4 group"
             >
-              <h2 className="text-lg font-semibold">{ticket.eventName}</h2>
-              <p>Precio: ${ticket.price}</p>
-              <p>Fecha: {new Date(ticket.eventDate).toLocaleString("es-CL")}</p>
+              <div
+                className="cursor-pointer hover:bg-[#223344] transition-colors p-3 rounded"
+                onClick={() => setSelectedTicket(ticket)}
+              >
+                <h2 className="text-lg font-semibold">{ticket.eventName}</h2>
+                <p className="text-sm text-gray-400">
+                  Precio: ${ticket.price} — Fecha:{" "}
+                  {new Date(ticket.eventDate).toLocaleString("es-CL")}
+                </p>
+              </div>
+
+              {/* Botón para poner/retirar de venta */}
+              <button
+                onClick={() => toggleSale(ticket._id, ticket.forSale)}
+                className={`mt-2 px-4 py-2 rounded ${
+                  ticket.forSale
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white transition`}
+              >
+                {ticket.forSale ? "Retirar de venta" : "Poner a la venta"}
+              </button>
             </div>
           ))
         )}
@@ -102,7 +139,7 @@ export default function MyTickets() {
                 value={JSON.stringify(selectedTicket)}
                 size={200}
                 qrStyle="dots"
-                logoImage="https://example.com/logo.png" // Cambia si usas un logo real
+                logoImage="https://example.com/logo.png"
               />
             </div>
             <p className="text-center text-sm">
