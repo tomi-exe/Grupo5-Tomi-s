@@ -61,13 +61,17 @@ export default function MyTickets() {
     };
   }, []);
 
-  // Función para alternar forSale
+  // Función para alternar forSale con logging para depurar
   const toggleSale = async (id: string, currentlyForSale: boolean) => {
-    const res = await fetch(`/api/tickets/${id}`, {
+    const url = `/api/tickets/${id}`;
+    const body = { forSale: !currentlyForSale };
+    console.log("📡 PUT a:", url, "con body:", body);
+
+    const res = await fetch(url, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ forSale: !currentlyForSale }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       alert("No se pudo actualizar la venta");
