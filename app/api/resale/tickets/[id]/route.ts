@@ -1,5 +1,3 @@
-// File: app/api/tickets/[id]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
@@ -12,6 +10,7 @@ interface Params {
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
     await connectToDB();
+
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -35,6 +34,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         { status: 404 }
       );
     }
+
     return NextResponse.json({ ticket: updated });
   } catch (err) {
     console.error("Error en PUT /api/tickets/[id]:", err);
@@ -45,12 +45,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     await connectToDB();
+
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // Marcar forSale=false en lugar de borrar:
+    // Para “retirar de venta” en lugar de borrar, marcamos forSale = false
     const updated = await Ticket.findOneAndUpdate(
       { _id: params.id, userId: session.user.id },
       { forSale: false },
@@ -62,6 +63,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         { status: 404 }
       );
     }
+
     return NextResponse.json({ ticket: updated });
   } catch (err) {
     console.error("Error en DELETE /api/tickets/[id]:", err);
