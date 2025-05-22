@@ -1,4 +1,7 @@
+// File: app/resale-market/page.tsx
+
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -11,34 +14,38 @@ interface Ticket {
 }
 
 export default function ResaleMarketPage() {
+  // Estado de la lista
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Carga los tickets en reventa
   useEffect(() => {
-    fetch("/api/resale/tickets")
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al cargar los datos");
-        return res.json();
-      })
-      .then((data) => setTickets(data.tickets))
-      .catch((err) => setError(err.message));
+    (async () => {
+      try {
+        const res = await fetch("/api/resale/tickets");
+        console.log("Fetch resale tickets:", res);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al cargar");
+        setTickets(data.tickets);
+      } catch (err: any) {
+        console.error("Error loading resale tickets:", err);
+        setError(err.message);
+      }
+    })();
   }, []);
 
-  if (error) {
+  if (error)
     return (
       <p className="text-center py-10 text-red-500">
         Error al cargar los datos de reventa.
       </p>
     );
-  }
-
-  if (!tickets) {
+  if (!tickets)
     return (
       <p className="text-center py-10 text-gray-400">
         Cargando entradas para reventa...
       </p>
     );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
