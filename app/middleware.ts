@@ -31,5 +31,14 @@ export async function middleware(request: NextRequest) {
 
 // Apply middleware to specific routes
 export const config = {
-  matcher: ["/my-tickets/:path*", "/api/tickets/:path*"],
+  matcher: [
+    "/my-tickets/:path*",
+    "/api/tickets/:path*",
+    "/resale-market/:path*",
+    "/api/resale/tickets/:path*",
+    "/resale-market",
+    "/resale-market/:path*",
+    "/api/resale/tickets",
+    "/api/resale/tickets/:path*",
+  ],
 };
