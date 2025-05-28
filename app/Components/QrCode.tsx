@@ -3,8 +3,9 @@ import { QRCode } from "react-qrcode-logo";
 interface Ticket {
   eventName: string;
   ticketNumber: string;
-  eventDate: string; // Cambiado de 'date' a 'eventDate'
-  qrData: string; // Código serializado para el QR
+  eventDate: string;
+  qrData: string;
+  transferDate?: string | null;
 }
 
 export default function TicketPreview({ ticket }: { ticket: Ticket }) {

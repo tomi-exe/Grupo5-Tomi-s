@@ -5,10 +5,11 @@ import Loading from "../Components/Loading";
 
 interface Ticket {
   _id: string;
-  eventName: string; // Cambiado de 'event' a 'eventName'
-  eventDate: string; // Puedes mostrar la fecha real del evento
+  eventName: string;
+  eventDate: string;
   price: number;
   createdAt: string;
+  transferDate?: string | null;
 }
 
 export default function PurchaseHistory() {
