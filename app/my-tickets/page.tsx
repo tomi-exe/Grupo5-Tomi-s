@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Loading from "../Components/Loading";
 import { QRCode } from "react-qrcode-logo";
 import { X } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-// Incluimos forSale en la interfaz
+// Interfaz de Ticket
 interface Ticket {
   _id: string;
   eventName: string;
@@ -20,8 +22,9 @@ export default function MyTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedTransferTicketId, setSelectedTransferTicketId] = useState<string | null>(null);
+  const [transferTo, setTransferTo] = useState("");
 
-  // Carga tus tickets (incluye forSale)
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -30,19 +33,11 @@ export default function MyTickets() {
         const start = Date.now();
         const res = await fetch("/api/tickets", {
           method: "GET",
-          credentials: "include", // envía cookies de sesión
+          credentials: "include",
         });
 
         if (res.status === 401) {
           window.location.href = "/login";
-          return;
-        }
-        if (!res.ok) {
-          console.error("Error al obtener tickets:", await res.text());
-          timeoutId = setTimeout(
-            () => setLoading(false),
-            Math.max(0, 2000 - (Date.now() - start))
-          );
           return;
         }
 
@@ -50,8 +45,9 @@ export default function MyTickets() {
         setTickets(tickets);
       } catch (err) {
         console.error("Error inesperado:", err);
+        toast.error("❌ Error al cargar los tickets.");
       } finally {
-        timeoutId = setTimeout(() => setLoading(false), 2000);
+        timeoutId = setTimeout(() => setLoading(false), 1000);
       }
     };
 
@@ -61,11 +57,9 @@ export default function MyTickets() {
     };
   }, []);
 
-  // Función para alternar forSale con logging para depurar
   const toggleSale = async (id: string, currentlyForSale: boolean) => {
     const url = `/api/resale/tickets/${id}`;
     const body = { forSale: !currentlyForSale };
-    console.log("📡 PUT a:", url, "con body:", body);
 
     const res = await fetch(url, {
       method: "PUT",
@@ -73,32 +67,56 @@ export default function MyTickets() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+
     if (!res.ok) {
-      alert("No se pudo actualizar la venta");
+      toast.error("❌ No se pudo actualizar la venta");
       return;
     }
+
     const { ticket: updated } = await res.json();
     setTickets((prev) => prev.map((t) => (t._id === id ? updated : t)));
+
+    toast.success(`✅ Ticket ${!currentlyForSale ? "puesto a la venta" : "retirado del mercado"}`);
   };
 
-  if (loading) {
-    return <Loading text="Cargando tus tickets..." />;
-  }
+  const handleTransfer = async () => {
+    if (!selectedTransferTicketId || !transferTo) {
+      toast.error("Debes ingresar un ID válido");
+      return;
+    }
+
+    const res = await fetch("/api/tickets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ ticketId: selectedTransferTicketId, newUserId: transferTo }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error(`❌ Error al transferir: ${data.message}`);
+      return;
+    }
+
+    toast.success("✅ Ticket transferido con éxito");
+    setTickets((prev) => prev.filter((t) => t._id !== selectedTransferTicketId));
+    setSelectedTransferTicketId(null);
+    setTransferTo("");
+  };
+
+  if (loading) return <Loading text="Cargando tus tickets..." />;
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white p-6">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center">Mis Tickets</h1>
+
         {tickets.length === 0 ? (
-          <p className="text-center text-[#92b0c9]">
-            No has comprado tickets aún.
-          </p>
+          <p className="text-center text-[#92b0c9]">No has comprado tickets aún.</p>
         ) : (
           tickets.map((ticket) => (
-            <div
-              key={ticket._id}
-              className="bg-[#192833] p-4 rounded mb-4 group"
-            >
+            <div key={ticket._id} className="bg-[#192833] p-4 rounded mb-4 group">
               <div
                 className="cursor-pointer hover:bg-[#223344] transition-colors p-3 rounded"
                 onClick={() => setSelectedTicket(ticket)}
@@ -106,21 +124,49 @@ export default function MyTickets() {
                 <h2 className="text-lg font-semibold">{ticket.eventName}</h2>
                 <p className="text-sm text-gray-400">
                   Precio: ${ticket.price} — Fecha:{" "}
-                  {new Date(ticket.eventDate).toLocaleString("es-CL")}
+                  {ticket.eventDate
+                    ? new Date(ticket.eventDate).toLocaleString("es-CL")
+                    : "Fecha inválida"}
                 </p>
               </div>
 
-              {/* Botón para poner/retirar de venta */}
-              <button
-                onClick={() => toggleSale(ticket._id, ticket.forSale)}
-                className={`mt-2 px-4 py-2 rounded ${
-                  ticket.forSale
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-green-600 hover:bg-green-700"
-                } text-white transition`}
-              >
-                {ticket.forSale ? "Retirar de venta" : "Poner a la venta"}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <button
+                  onClick={() => toggleSale(ticket._id, ticket.forSale)}
+                  className={`px-4 py-2 rounded ${
+                    ticket.forSale
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-green-600 hover:bg-green-700"
+                  } text-white transition w-full sm:w-auto`}
+                >
+                  {ticket.forSale ? "Retirar de venta" : "Poner a la venta"}
+                </button>
+
+                <button
+                  onClick={() => setSelectedTransferTicketId(ticket._id)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full sm:w-auto"
+                >
+                  Transferir
+                </button>
+              </div>
+
+              {selectedTransferTicketId === ticket._id && (
+                <div className="mt-4 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="ID del nuevo dueño"
+                    className="text-black px-3 py-1 rounded w-full"
+                    value={transferTo}
+                    onChange={(e) => setTransferTo(e.target.value)}
+                  />
+                  <button
+                    onClick={handleTransfer}
+                    className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded w-full"
+                  >
+                    Confirmar transferencia
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}
@@ -155,3 +201,5 @@ export default function MyTickets() {
     </div>
   );
 }
+
+
