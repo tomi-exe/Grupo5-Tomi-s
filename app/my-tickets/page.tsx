@@ -63,7 +63,7 @@ export default function MyTickets() {
 
   // Función para alternar forSale con logging para depurar
   const toggleSale = async (id: string, currentlyForSale: boolean) => {
-    const url = `/api/tickets/${id}`;
+    const url = `/api/resale/tickets/${id}`;
     const body = { forSale: !currentlyForSale };
     console.log("📡 PUT a:", url, "con body:", body);
 
