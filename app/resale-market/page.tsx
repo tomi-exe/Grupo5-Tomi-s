@@ -11,6 +11,8 @@ interface Ticket {
   price: number;
   disp: number;
   userId: string;
+  forSale?: boolean;
+  transferDate?: string | null;
 }
 
 export default function ResaleMarketPage() {
