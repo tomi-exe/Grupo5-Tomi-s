@@ -18,29 +18,71 @@ interface Ticket {
 export default function ResaleMarketPage() {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    let timeoutId: NodeJS.Timeout;
+
+    const fetchTickets = async () => {
       try {
-        const res = await fetch("/api/resale/tickets");
+        const res = await fetch("/api/resale/tickets", {
+          credentials: "include",
+        });
+
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error al cargar");
         setTickets(data.tickets);
       } catch (err: any) {
         setError(err.message);
+      } finally {
+        timeoutId = setTimeout(() => setLoading(false), 1000);
       }
-    })();
+    };
+
+    fetchTickets();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
-  const handleBuy = (ticket: Ticket) => {
-    window.location.href =
-      `/payment?ticketId=${ticket._id}` +
-      `&eventName=${encodeURIComponent(ticket.eventName)}` +
-      `&eventDate=${encodeURIComponent(ticket.eventDate)}` +
-      `&price=${ticket.price}` +
-      `&disp=${ticket.disp}` +
-      `&userId=${ticket.userId}`;
+  // Nueva lógica de compra de reventa
+  const handleBuy = async (ticket: Ticket) => {
+    if (!window.confirm("¿Seguro que quieres comprar esta entrada?")) return;
+
+    const res = await fetch(`/api/resale/tickets/${ticket._id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ buy: true }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (res.ok) {
+      alert("¡Compra realizada! Revisa tu correo para ver tu entrada.");
+      // Opcional: recargar lista de tickets para actualizar el mercado
+      setTickets((prev) => prev && prev.filter((t) => t._id !== ticket._id));
+    } else {
+      const data = await res.json();
+      alert(data.message || "No se pudo completar la compra.");
+    }
   };
+
+  if (loading) {
+    return (
+      <p className="text-center py-10 text-gray-400">
+        Cargando entradas para reventa...
+      </p>
+    );
+  }
 
   if (error) {
     return (
@@ -49,10 +91,10 @@ export default function ResaleMarketPage() {
       </p>
     );
   }
-  if (!tickets) {
+  if (!tickets || tickets.length === 0) {
     return (
       <p className="text-center py-10 text-gray-400">
-        Cargando entradas para reventa...
+        No hay entradas para reventa.
       </p>
     );
   }
