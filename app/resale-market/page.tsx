@@ -9,6 +9,8 @@ interface Ticket {
   eventName: string;
   eventDate: string;
   price: number;
+  disp: number;
+  userId: string;
 }
 
 export default function ResaleMarketPage() {
@@ -19,17 +21,24 @@ export default function ResaleMarketPage() {
     (async () => {
       try {
         const res = await fetch("/api/resale/tickets");
-        console.log("Fetch resale tickets status:", res.status);
         const data = await res.json();
-        console.log("Fetch resale tickets data:", data);
         if (!res.ok) throw new Error(data.error || "Error al cargar");
         setTickets(data.tickets);
       } catch (err: any) {
-        console.error("Error loading resale tickets:", err);
         setError(err.message);
       }
     })();
   }, []);
+
+  const handleBuy = (ticket: Ticket) => {
+    window.location.href =
+      `/payment?ticketId=${ticket._id}` +
+      `&eventName=${encodeURIComponent(ticket.eventName)}` +
+      `&eventDate=${encodeURIComponent(ticket.eventDate)}` +
+      `&price=${ticket.price}` +
+      `&disp=${ticket.disp}` +
+      `&userId=${ticket.userId}`;
+  };
 
   if (error) {
     return (
@@ -70,7 +79,13 @@ export default function ResaleMarketPage() {
                 <p className="text-xl font-medium mb-4 text-white">
                   Precio: ${ticket.price}
                 </p>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="rounded-xl bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onClick={() => handleBuy(ticket)}
+                  >
+                    Comprar
+                  </button>
                   <button className="rounded-xl bg-[#3b4856] px-3 py-1 text-sm font-medium text-white hover:bg-[#4f5b6a] focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Ver detalles
                   </button>
