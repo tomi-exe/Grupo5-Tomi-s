@@ -16,13 +16,16 @@ interface Ticket {
   disp: number;
   userId: string;
   forSale: boolean;
+  transferDate?: string | null;
 }
 
 export default function MyTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [selectedTransferTicketId, setSelectedTransferTicketId] = useState<string | null>(null);
+  const [selectedTransferTicketId, setSelectedTransferTicketId] = useState<
+    string | null
+  >(null);
   const [transferTo, setTransferTo] = useState("");
 
   useEffect(() => {
@@ -76,7 +79,11 @@ export default function MyTickets() {
     const { ticket: updated } = await res.json();
     setTickets((prev) => prev.map((t) => (t._id === id ? updated : t)));
 
-    toast.success(`✅ Ticket ${!currentlyForSale ? "puesto a la venta" : "retirado del mercado"}`);
+    toast.success(
+      `✅ Ticket ${
+        !currentlyForSale ? "puesto a la venta" : "retirado del mercado"
+      }`
+    );
   };
 
   const handleTransfer = async () => {
@@ -89,7 +96,10 @@ export default function MyTickets() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ ticketId: selectedTransferTicketId, newUserId: transferTo }),
+      body: JSON.stringify({
+        ticketId: selectedTransferTicketId,
+        newUserId: transferTo,
+      }),
     });
 
     const data = await res.json();
@@ -99,7 +109,9 @@ export default function MyTickets() {
     }
 
     toast.success("✅ Ticket transferido con éxito");
-    setTickets((prev) => prev.filter((t) => t._id !== selectedTransferTicketId));
+    setTickets((prev) =>
+      prev.filter((t) => t._id !== selectedTransferTicketId)
+    );
     setSelectedTransferTicketId(null);
     setTransferTo("");
   };
@@ -113,10 +125,15 @@ export default function MyTickets() {
         <h1 className="text-2xl font-bold mb-6 text-center">Mis Tickets</h1>
 
         {tickets.length === 0 ? (
-          <p className="text-center text-[#92b0c9]">No has comprado tickets aún.</p>
+          <p className="text-center text-[#92b0c9]">
+            No has comprado tickets aún.
+          </p>
         ) : (
           tickets.map((ticket) => (
-            <div key={ticket._id} className="bg-[#192833] p-4 rounded mb-4 group">
+            <div
+              key={ticket._id}
+              className="bg-[#192833] p-4 rounded mb-4 group"
+            >
               <div
                 className="cursor-pointer hover:bg-[#223344] transition-colors p-3 rounded"
                 onClick={() => setSelectedTicket(ticket)}
@@ -128,6 +145,13 @@ export default function MyTickets() {
                     ? new Date(ticket.eventDate).toLocaleString("es-CL")
                     : "Fecha inválida"}
                 </p>
+                {/* Mostrar fecha de transferencia si existe */}
+                {ticket.transferDate && (
+                  <p className="text-xs text-purple-300 mt-1">
+                    Transferido el:{" "}
+                    {new Date(ticket.transferDate).toLocaleString("es-CL")}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
@@ -201,5 +225,3 @@ export default function MyTickets() {
     </div>
   );
 }
-
-
