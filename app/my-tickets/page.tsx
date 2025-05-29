@@ -16,6 +16,7 @@ interface Ticket {
   disp: number;
   userId: string;
   forSale: boolean;
+  isUsed: boolean;
   transferDate?: string | null;
 }
 
@@ -61,6 +62,12 @@ export default function MyTickets() {
   }, []);
 
   const toggleSale = async (id: string, currentlyForSale: boolean) => {
+    const ticket = tickets.find((t) => t._id === id);
+    if (ticket?.isUsed) {
+    toast.error("❌ Este ticket no puede ser puesto a la venta.");
+    return;
+    }
+    
     const url = `/api/resale/tickets/${id}`;
     const body = { forSale: !currentlyForSale };
 
