@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
+import { getSession } from "@/app/lib/auth";
 
 // GET: Listar solo tickets activos en reventa
 export async function GET() {
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
   await connectToDB();
   const tickets = await Ticket.find({ forSale: true });
   return NextResponse.json({ tickets });
@@ -11,6 +16,10 @@ export async function GET() {
 
 // POST: Publicar nueva reventa (marca forSale=true)
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
   await connectToDB();
   const data = await request.json();
   const { eventName, eventDate, price, userId } = data;
