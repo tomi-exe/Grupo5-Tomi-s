@@ -14,6 +14,7 @@ const TicketSchema = new mongoose.Schema(
     },
     forSale: { type: Boolean, default: false },
     transferDate: { type: Date, default: null },
+    isUsed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

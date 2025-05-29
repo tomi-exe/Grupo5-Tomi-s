@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const { buy, forSale, price, disp } = await request.json();
+    const { buy, forSale, price, disp, isUsed } = await request.json();
 
     // COMPRA DE REVENTA
     if (buy) {
@@ -122,6 +122,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     if (forSale !== undefined) updates.forSale = forSale;
     if (price !== undefined) updates.price = price;
     if (disp !== undefined) updates.disp = disp;
+    if (isUsed !== undefined) updates.isUsed = isUsed;
 
     const updated = await Ticket.findOneAndUpdate(
       { _id: params.id, userId: session.user.id },
