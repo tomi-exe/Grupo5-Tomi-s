@@ -7,7 +7,12 @@ const TicketSchema = new mongoose.Schema(
     eventDate: { type: Date, required: true },
     price: { type: Number, required: true },
     disp: { type: Number, required: true },
-    userId: {
+    userId: { // Propietario original
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    currentOwnerId: { // Propietario actual
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -15,9 +20,11 @@ const TicketSchema = new mongoose.Schema(
     forSale: { type: Boolean, default: false },
     transferDate: { type: Date, default: null },
     isUsed: { type: Boolean, default: false },
+    sold: { type: Boolean, default: false }, // Indica si ya fue vendido
   },
   { timestamps: true }
 );
+
 
 const Ticket = mongoose.models.Ticket
   ? mongoose.model("Ticket", TicketSchema)

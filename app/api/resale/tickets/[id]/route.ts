@@ -5,9 +5,50 @@ import { getSession } from "@/app/lib/auth";
 import User from "@/models/User";
 import nodemailer from "nodemailer";
 import QRCode from "qrcode";
+import mongoose from "mongoose";
 
 interface Params {
   params: { id: string };
+}
+
+export async function POST(request: NextRequest, { params }: Params) {
+  try {
+    await connectToDB();
+
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
+    const ticket = await Ticket.findById(params.id);
+
+    if (!ticket || !ticket.forSale) {
+      return NextResponse.json({ message: "El ticket no está disponible" }, { status: 404 });
+    }
+
+    // Validar que el comprador no sea el propietario actual
+    if (String(ticket.currentOwnerId) === String(session.user.id)) {
+      return NextResponse.json({ message: "No puedes comprar tu propio ticket" }, { status: 400 });
+    }
+
+    // Actualizar ticket para transferir propiedad
+    ticket.currentOwnerId = new mongoose.Types.ObjectId(session.user.id); // Nuevo propietario
+    ticket.forSale = false;
+    ticket.sold = true;
+    ticket.transferDate = new Date();
+
+    await ticket.save();
+
+    // Notificación segura por consola
+    console.log(
+      `📢 Notificación: El ticket para "${ticket.eventName}" ha sido transferido al usuario ${session.user.email}.`
+    );
+
+    return NextResponse.json({ ticket });
+  } catch (err) {
+    console.error("Error en POST /api/resale/tickets/[id]/buy:", err);
+    return NextResponse.json({ message: "Error interno" }, { status: 500 });
+  }
 }
 
 export async function PUT(request: NextRequest, { params }: Params) {
