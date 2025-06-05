@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
 import { getSession } from "@/app/lib/auth";
+import { TransferService } from "@/app/lib/transferService";
 
 /**
  * POST: Registrar un nuevo ticket
@@ -29,8 +30,9 @@ export async function POST(request: NextRequest) {
       price,
       disp,
       userId: session.user.id,
+      currentOwnerId: session.user.id, // Establecer propietario inicial
       forSale: false,
-      transferDate: null, // <-- Se inicializa en null al crear
+      transferDate: null,
     });
 
     await ticket.save();
@@ -55,7 +57,12 @@ export async function GET(request: NextRequest) {
     if (!session?.user)
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
 
-    const tickets = await Ticket.find({ userId: session.user.id });
+    const tickets = await Ticket.find({ 
+      $or: [
+        { userId: session.user.id },
+        { currentOwnerId: session.user.id }
+      ]
+    });
     return NextResponse.json({ tickets }, { status: 200 });
   } catch (error) {
     console.error("Error GET /api/tickets:", error);
@@ -88,13 +95,26 @@ export async function PUT(request: NextRequest) {
         { status: 404 }
       );
 
-    if (ticket.userId.toString() !== session.user.id) {
+    // Verificar que el usuario actual es el propietario
+    if (ticket.currentOwnerId?.toString() !== session.user.id && ticket.userId.toString() !== session.user.id) {
       return NextResponse.json({ message: "No autorizado" }, { status: 403 });
     }
 
-    ticket.userId = newUserId;
+    // Registrar la transferencia en el historial ANTES de actualizar el ticket
+    await TransferService.recordTransfer({
+      ticketId: ticket._id.toString(),
+      previousOwnerId: ticket.currentOwnerId?.toString() || ticket.userId.toString(),
+      newOwnerId: newUserId,
+      transferType: "direct_transfer",
+      notes: "Transferencia directa entre usuarios",
+      request
+    });
+
+    // Actualizar el ticket
+    const previousOwnerId = ticket.currentOwnerId || ticket.userId;
+    ticket.currentOwnerId = newUserId;
     ticket.forSale = false;
-    ticket.transferDate = new Date(); // <-- Guarda la fecha de transferencia
+    ticket.transferDate = new Date();
     await ticket.save();
 
     return NextResponse.json(
