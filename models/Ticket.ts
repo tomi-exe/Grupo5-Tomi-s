@@ -1,5 +1,40 @@
 import mongoose from "mongoose";
 
+// Interfaces para tipado TypeScript
+interface ITicket extends mongoose.Document {
+  eventName: string;
+  eventDate: Date;
+  price: number;
+  disp: number;
+  userId: mongoose.Types.ObjectId;
+  currentOwnerId: mongoose.Types.ObjectId;
+  forSale: boolean;
+  transferDate?: Date | null;
+  isUsed: boolean;
+  sold: boolean;
+  purchaseDate: Date;
+  lastTransferDate?: Date | null;
+  transferCount: number;
+  originalPrice?: number;
+  qrCode?: string;
+  status: 'active' | 'used' | 'expired' | 'cancelled';
+  
+  // Virtuals
+  isTransferred: boolean;
+  daysSincePurchase: number;
+  
+  // Methods
+  transferTo(newOwnerId: string | mongoose.Types.ObjectId): Promise<ITicket>;
+  putForSale(salePrice?: number): Promise<ITicket>;
+  removeFromSale(): Promise<ITicket>;
+  markAsUsed(): Promise<ITicket>;
+}
+
+interface ITicketModel extends mongoose.Model<ITicket> {
+  findByCurrentOwner(ownerId: string | mongoose.Types.ObjectId): mongoose.Query<ITicket[], ITicket>;
+  findForSale(): mongoose.Query<ITicket[], ITicket>;
+}
+
 // Definición del esquema de Ticket con campos para reventa y auditoría
 const TicketSchema = new mongoose.Schema(
   {
@@ -82,7 +117,7 @@ TicketSchema.virtual('daysSincePurchase').get(function() {
 });
 
 // Métodos estáticos
-TicketSchema.statics.findByCurrentOwner = function(ownerId) {
+TicketSchema.statics.findByCurrentOwner = function(ownerId: string | mongoose.Types.ObjectId) {
   return this.find({ currentOwnerId: ownerId });
 };
 
@@ -116,8 +151,8 @@ TicketSchema.methods.markAsUsed = function() {
   return this.save();
 };
 
-const Ticket = mongoose.models.Ticket
-  ? mongoose.model("Ticket", TicketSchema)
-  : mongoose.model("Ticket", TicketSchema);
+const Ticket = (mongoose.models.Ticket as ITicketModel) || 
+  mongoose.model<ITicket, ITicketModel>("Ticket", TicketSchema);
 
 export default Ticket;
+export type { ITicket, ITicketModel };

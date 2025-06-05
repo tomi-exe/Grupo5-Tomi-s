@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import Transfer from "@/models/Transfer";
+import type { ITransfer } from "@/models/Transfer";
 import User from "@/models/User";
 import Ticket from "@/models/Ticket";
-import { connectToDB } from "./mongodb";
+import { connectToDB } from "./db-utils"; // Cambiar a la nueva utilidad
 
 interface TransferData {
   ticketId: string;
