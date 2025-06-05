@@ -1,6 +1,30 @@
 import mongoose from "mongoose";
 
-// Esquema para el historial de transferencias
+// Interfaces para tipado TypeScript
+interface ITransfer extends mongoose.Document {
+  ticketId: mongoose.Types.ObjectId;
+  eventName: string;
+  eventDate: Date;
+  previousOwnerId: mongoose.Types.ObjectId;
+  previousOwnerEmail: string;
+  previousOwnerName: string;
+  newOwnerId: mongoose.Types.ObjectId;
+  newOwnerEmail: string;
+  newOwnerName: string;
+  transferType: "direct_transfer" | "resale_purchase" | "admin_transfer";
+  transferPrice?: number | null;
+  transferDate: Date;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  notes?: string | null;
+  status: "completed" | "pending" | "failed";
+}
+
+interface ITransferModel extends mongoose.Model<ITransfer> {
+  // Aquí puedes agregar métodos estáticos si los necesitas
+}
+
+// Definición del esquema de Transfer con campos para reventa
 const TransferSchema = new mongoose.Schema(
   {
     ticketId: {
@@ -75,7 +99,6 @@ const TransferSchema = new mongoose.Schema(
   },
   { 
     timestamps: true,
-    // Índices para optimizar consultas de auditoría
   }
 );
 
@@ -86,6 +109,8 @@ TransferSchema.index({ newOwnerId: 1, transferDate: -1 });
 TransferSchema.index({ transferDate: -1 });
 TransferSchema.index({ transferType: 1, transferDate: -1 });
 
-const Transfer = mongoose.models.Transfer || mongoose.model("Transfer", TransferSchema);
+const Transfer = (mongoose.models.Transfer as ITransferModel) || 
+  mongoose.model<ITransfer, ITransferModel>("Transfer", TransferSchema);
 
 export default Transfer;
+export type { ITransfer, ITransferModel };
