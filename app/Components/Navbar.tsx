@@ -79,10 +79,22 @@ export default function Navbar() {
           REVENTAS
         </Link>
         <Link
+          href="/transfer-history"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
+        >
+          TRANSFERENCIAS
+        </Link>
+        <Link
           href="/purchase-history"
           className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
         >
           HISTORIAL DE COMPRAS
+        </Link>
+        <Link
+          href="/admin/transfers"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-orange-600/20 border border-orange-600/50"
+        >
+          ADMIN
         </Link>
         <Link
           href="/logout"
