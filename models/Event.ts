@@ -10,14 +10,14 @@ interface IEvent extends mongoose.Document {
   currentCheckedIn: number;
   availableCapacity: number;
   basePrice: number;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  status: "upcoming" | "ongoing" | "completed" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Métodos virtuales
   isFull: boolean;
   occupancyPercentage: number;
-  
+
   // Métodos de instancia
   checkIn(): Promise<IEvent>;
   isCheckInAllowed(): boolean;
@@ -54,33 +54,37 @@ const EventSchema = new mongoose.Schema(
     maxCapacity: {
       type: Number,
       required: true,
-      min: [1, 'La capacidad máxima debe ser mayor a 0'],
+      min: [1, "La capacidad máxima debe ser mayor a 0"],
     },
     currentCheckedIn: {
       type: Number,
       default: 0,
-      min: [0, 'Los check-ins no pueden ser negativos'],
+      min: [0, "Los check-ins no pueden ser negativos"],
     },
     basePrice: {
       type: Number,
       required: true,
-      min: [0, 'El precio base no puede ser negativo'],
+      min: [0, "El precio base no puede ser negativo"],
     },
     status: {
       type: String,
-      enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
-      default: 'upcoming',
+      enum: ["upcoming", "ongoing", "completed", "cancelled"],
+      default: "upcoming",
     },
   },
-  { 
+  {
     timestamps: true,
   }
 );
 
 // Middleware para validar que currentCheckedIn no exceda maxCapacity
-EventSchema.pre('save', function(next) {
+EventSchema.pre("save", function (next) {
   if (this.currentCheckedIn > this.maxCapacity) {
-    return next(new Error(`Los check-ins (${this.currentCheckedIn}) no pueden exceder la capacidad máxima (${this.maxCapacity})`));
+    return next(
+      new Error(
+        `Los check-ins (${this.currentCheckedIn}) no pueden exceder la capacidad máxima (${this.maxCapacity})`
+      )
+    );
   }
   next();
 });
@@ -92,34 +96,34 @@ EventSchema.index({ status: 1, eventDate: 1 });
 EventSchema.index({ eventName: "text", location: "text", description: "text" });
 
 // Métodos virtuales
-EventSchema.virtual('isFull').get(function() {
+EventSchema.virtual("isFull").get(function () {
   return this.currentCheckedIn >= this.maxCapacity;
 });
 
-EventSchema.virtual('occupancyPercentage').get(function() {
+EventSchema.virtual("occupancyPercentage").get(function () {
   return Math.round((this.currentCheckedIn / this.maxCapacity) * 100);
 });
 
-EventSchema.virtual('availableCapacity').get(function() {
+EventSchema.virtual("availableCapacity").get(function () {
   return Math.max(0, this.maxCapacity - this.currentCheckedIn);
 });
 
 // Métodos estáticos
-EventSchema.statics.findByEventName = function(eventName: string) {
-  return this.findOne({ eventName: new RegExp(eventName, 'i') });
+EventSchema.statics.findByEventName = function (eventName: string) {
+  return this.findOne({ eventName: new RegExp(eventName, "i") });
 };
 
-EventSchema.statics.findUpcomingEvents = function() {
-  return this.find({ 
-    status: 'upcoming',
-    eventDate: { $gte: new Date() }
+EventSchema.statics.findUpcomingEvents = function () {
+  return this.find({
+    status: "upcoming",
+    eventDate: { $gte: new Date() },
   }).sort({ eventDate: 1 });
 };
 
-EventSchema.statics.getEventCapacityStats = async function(eventId: string) {
+EventSchema.statics.getEventCapacityStats = async function (eventId: string) {
   const event = await this.findById(eventId);
   if (!event) return null;
-  
+
   return {
     eventName: event.eventName,
     maxCapacity: event.maxCapacity,
@@ -127,29 +131,30 @@ EventSchema.statics.getEventCapacityStats = async function(eventId: string) {
     availableCapacity: event.availableCapacity,
     occupancyPercentage: event.occupancyPercentage,
     isFull: event.isFull,
-    status: event.status
+    status: event.status,
   };
 };
 
 // Métodos de instancia
-EventSchema.methods.checkIn = async function() {
+EventSchema.methods.checkIn = async function () {
   if (this.isFull) {
-    throw new Error('El evento ha alcanzado su capacidad máxima');
+    throw new Error("El evento ha alcanzado su capacidad máxima");
   }
-  
+
   this.currentCheckedIn += 1;
   return await this.save();
 };
 
-EventSchema.methods.isCheckInAllowed = function() {
-  return !this.isFull && this.status === 'upcoming';
+EventSchema.methods.isCheckInAllowed = function () {
+  return !this.isFull && this.status === "upcoming";
 };
 
-EventSchema.methods.getRemainingCapacity = function() {
+EventSchema.methods.getRemainingCapacity = function () {
   return this.availableCapacity;
 };
 
-const Event = (mongoose.models.Event as IEventModel) || 
+const Event =
+  (mongoose.models.Event as IEventModel) ||
   mongoose.model<IEvent, IEventModel>("Event", EventSchema);
 
 export default Event;
