@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRightLeft, Calendar, User, TrendingUp, Download } from "lucide-react";
-import Loading from "../Components/Loading";
+import {
+  ArrowRightLeft,
+  Calendar,
+  User,
+  TrendingUp,
+  Download,
+} from "lucide-react";
+import Loading from "../../components/Loading";
 
 interface Transfer {
   _id: string;
@@ -78,7 +84,7 @@ export default function TransferHistoryPage() {
 
   const filteredTransfers = transfers.filter((transfer) => {
     const currentUserId = getCurrentUserId();
-    
+
     if (filter === "sent") {
       return transfer.previousOwnerId._id === currentUserId;
     } else if (filter === "received") {
@@ -92,7 +98,8 @@ export default function TransferHistoryPage() {
     return transfer.newOwnerId._id === currentUserId ? "received" : "sent";
   };
 
-  if (loading) return <Loading text="Cargando historial de transferencias..." />;
+  if (loading)
+    return <Loading text="Cargando historial de transferencias..." />;
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white p-6">
@@ -113,7 +120,9 @@ export default function TransferHistoryPage() {
           <div className="bg-[#192734] p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-gray-400">Total Transferencias</span>
+              <span className="text-sm text-gray-400">
+                Total Transferencias
+              </span>
             </div>
             <p className="text-2xl font-bold">{transfers.length}</p>
           </div>
@@ -123,7 +132,10 @@ export default function TransferHistoryPage() {
               <span className="text-sm text-gray-400">Recibidas</span>
             </div>
             <p className="text-2xl font-bold">
-              {transfers.filter(t => getTransferDirection(t) === "received").length}
+              {
+                transfers.filter((t) => getTransferDirection(t) === "received")
+                  .length
+              }
             </p>
           </div>
           <div className="bg-[#192734] p-4 rounded-lg">
@@ -132,7 +144,10 @@ export default function TransferHistoryPage() {
               <span className="text-sm text-gray-400">Enviadas</span>
             </div>
             <p className="text-2xl font-bold">
-              {transfers.filter(t => getTransferDirection(t) === "sent").length}
+              {
+                transfers.filter((t) => getTransferDirection(t) === "sent")
+                  .length
+              }
             </p>
           </div>
         </div>
@@ -159,7 +174,12 @@ export default function TransferHistoryPage() {
                   : "bg-[#233748] text-gray-300 hover:bg-[#2c3e50]"
               }`}
             >
-              Recibidas ({transfers.filter(t => getTransferDirection(t) === "received").length})
+              Recibidas (
+              {
+                transfers.filter((t) => getTransferDirection(t) === "received")
+                  .length
+              }
+              )
             </button>
             <button
               onClick={() => setFilter("sent")}
@@ -169,7 +189,12 @@ export default function TransferHistoryPage() {
                   : "bg-[#233748] text-gray-300 hover:bg-[#2c3e50]"
               }`}
             >
-              Enviadas ({transfers.filter(t => getTransferDirection(t) === "sent").length})
+              Enviadas (
+              {
+                transfers.filter((t) => getTransferDirection(t) === "sent")
+                  .length
+              }
+              )
             </button>
           </div>
         </div>
@@ -181,19 +206,18 @@ export default function TransferHistoryPage() {
               <ArrowRightLeft className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg">No hay transferencias que mostrar</p>
               <p className="text-sm">
-                {filter === "all" 
+                {filter === "all"
                   ? "Aún no has realizado ninguna transferencia"
                   : filter === "sent"
                   ? "No has enviado ninguna transferencia"
-                  : "No has recibido ninguna transferencia"
-                }
+                  : "No has recibido ninguna transferencia"}
               </p>
             </div>
           ) : (
             filteredTransfers.map((transfer) => {
               const direction = getTransferDirection(transfer);
               const isReceived = direction === "received";
-              
+
               return (
                 <div
                   key={transfer._id}
@@ -203,12 +227,16 @@ export default function TransferHistoryPage() {
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        isReceived ? "bg-green-500/20" : "bg-red-500/20"
-                      }`}>
-                        <ArrowRightLeft className={`w-5 h-5 ${
-                          isReceived ? "text-green-400" : "text-red-400"
-                        }`} />
+                      <div
+                        className={`p-2 rounded-full ${
+                          isReceived ? "bg-green-500/20" : "bg-red-500/20"
+                        }`}
+                      >
+                        <ArrowRightLeft
+                          className={`w-5 h-5 ${
+                            isReceived ? "text-green-400" : "text-red-400"
+                          }`}
+                        />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">
@@ -216,18 +244,22 @@ export default function TransferHistoryPage() {
                         </h3>
                         <p className="text-sm text-gray-400 flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(transfer.ticketId.eventDate).toLocaleDateString("es-CL")}
+                          {new Date(
+                            transfer.ticketId.eventDate
+                          ).toLocaleDateString("es-CL")}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        transfer.transferType === "direct_transfer"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : transfer.transferType === "resale_purchase"
-                          ? "bg-purple-500/20 text-purple-400"
-                          : "bg-orange-500/20 text-orange-400"
-                      }`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          transfer.transferType === "direct_transfer"
+                            ? "bg-blue-500/20 text-blue-400"
+                            : transfer.transferType === "resale_purchase"
+                            ? "bg-purple-500/20 text-purple-400"
+                            : "bg-orange-500/20 text-orange-400"
+                        }`}
+                      >
                         {formatTransferType(transfer.transferType)}
                       </span>
                       {transfer.transferPrice && (
@@ -247,24 +279,26 @@ export default function TransferHistoryPage() {
                         <User className="w-4 h-4 text-gray-400" />
                         <div>
                           <p className="font-medium">
-                            {isReceived 
-                              ? transfer.previousOwnerId.name 
-                              : transfer.newOwnerId.name
-                            }
+                            {isReceived
+                              ? transfer.previousOwnerId.name
+                              : transfer.newOwnerId.name}
                           </p>
                           <p className="text-xs text-gray-400">
-                            {isReceived 
-                              ? transfer.previousOwnerId.email 
-                              : transfer.newOwnerId.email
-                            }
+                            {isReceived
+                              ? transfer.previousOwnerId.email
+                              : transfer.newOwnerId.email}
                           </p>
                         </div>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400 mb-1">Fecha de transferencia:</p>
+                      <p className="text-sm text-gray-400 mb-1">
+                        Fecha de transferencia:
+                      </p>
                       <p className="font-medium">
-                        {new Date(transfer.transferDate).toLocaleString("es-CL")}
+                        {new Date(transfer.transferDate).toLocaleString(
+                          "es-CL"
+                        )}
                       </p>
                     </div>
                   </div>
@@ -276,13 +310,15 @@ export default function TransferHistoryPage() {
                   )}
 
                   <div className="mt-4 flex justify-between items-center">
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      transfer.status === "completed"
-                        ? "bg-green-500/20 text-green-400"
-                        : transfer.status === "pending"
-                        ? "bg-yellow-500/20 text-yellow-400"
-                        : "bg-red-500/20 text-red-400"
-                    }`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        transfer.status === "completed"
+                          ? "bg-green-500/20 text-green-400"
+                          : transfer.status === "pending"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-red-500/20 text-red-400"
+                      }`}
+                    >
                       {transfer.status.toUpperCase()}
                     </span>
                     <p className="text-xs text-gray-400">

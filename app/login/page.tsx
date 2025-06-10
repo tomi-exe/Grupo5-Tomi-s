@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "../Components/Toast"; // Asegúrate de importar correctamente el hook useToast
-import Loading from "../Components/Loading";
+import { useToast } from "../../components/Toast"; // Asegúrate de importar correctamente el hook useToast
+import Loading from "../../components/Loading";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -33,7 +33,10 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      addToast("Error al iniciar sesión. Por favor, intenta nuevamente.", "error"); // Muestra toast de error genérico
+      addToast(
+        "Error al iniciar sesión. Por favor, intenta nuevamente.",
+        "error"
+      ); // Muestra toast de error genérico
     } finally {
       setLoading(false);
     }

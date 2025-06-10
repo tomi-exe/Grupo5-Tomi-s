@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, ReactNode } from "react";
-import Navbar from "./Components/Navbar";
+import Navbar from "../components/Navbar";
 import Link from "next/link";
-import { ToastProvider } from "./Components/Toast"; // Ajusta la ruta según tu estructura
+import { ToastProvider } from "../components/Toast"; // Ajusta la ruta según tu estructura
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const [search, setSearch] = useState("");

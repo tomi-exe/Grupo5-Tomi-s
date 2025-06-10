@@ -69,7 +69,7 @@ export default function MyTickets() {
       toast.error("❌ Este ticket no puede ser puesto a la venta.");
       return;
     }
-    
+
     const url = `/api/resale/tickets/${id}`;
     const body = { forSale: !currentlyForSale };
 
@@ -133,7 +133,7 @@ export default function MyTickets() {
       eventDate: ticket.eventDate,
       price: ticket.price.toString(),
     });
-    
+
     router.push(`/checkin?${queryParams.toString()}`);
   };
 
@@ -177,7 +177,7 @@ export default function MyTickets() {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h2 className="text-lg font-semibold">{ticket.eventName}</h2>
-                  
+
                   {/* Indicadores de estado del evento */}
                   {isEventToday(ticket.eventDate) && (
                     <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
@@ -190,7 +190,7 @@ export default function MyTickets() {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
@@ -200,9 +200,11 @@ export default function MyTickets() {
                         : "Fecha inválida"}
                     </span>
                   </div>
-                  <span className="text-white font-medium">${ticket.price}</span>
+                  <span className="text-white font-medium">
+                    ${ticket.price}
+                  </span>
                 </div>
-                
+
                 {/* Mostrar fecha de transferencia si existe */}
                 {ticket.transferDate && (
                   <p className="text-xs text-purple-300 mt-1">
@@ -214,31 +216,35 @@ export default function MyTickets() {
 
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
                 {/* Botón Check-in - Solo visible si el evento es hoy o futuro y no está usado */}
-                {(isEventToday(ticket.eventDate) || isEventUpcoming(ticket.eventDate)) && !ticket.isUsed && (
-                  <button
-                    onClick={() => handleCheckIn(ticket)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2 transition w-full sm:w-auto font-medium"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    {isEventToday(ticket.eventDate) ? "Check-in Hoy" : "Pre Check-in"}
-                  </button>
-                )}
+                {(isEventToday(ticket.eventDate) ||
+                  isEventUpcoming(ticket.eventDate)) &&
+                  !ticket.isUsed && (
+                    <button
+                      onClick={() => handleCheckIn(ticket)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2 transition w-full sm:w-auto font-medium"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      {isEventToday(ticket.eventDate)
+                        ? "Check-in Hoy"
+                        : "Pre Check-in"}
+                    </button>
+                  )}
 
                 <button
                   onClick={() => toggleSale(ticket._id, ticket.forSale)}
                   disabled={ticket.isUsed}
                   className={`px-4 py-2 rounded transition w-full sm:w-auto ${
-                    ticket.isUsed 
+                    ticket.isUsed
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                       : ticket.forSale
                       ? "bg-red-600 hover:bg-red-700 text-white"
                       : "bg-blue-600 hover:bg-blue-700 text-white"
                   }`}
                 >
-                  {ticket.isUsed 
-                    ? "Ticket Usado" 
-                    : ticket.forSale 
-                    ? "Retirar de venta" 
+                  {ticket.isUsed
+                    ? "Ticket Usado"
+                    : ticket.forSale
+                    ? "Retirar de venta"
                     : "Poner a la venta"}
                 </button>
 
