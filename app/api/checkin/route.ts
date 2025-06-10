@@ -10,19 +10,11 @@ export async function POST(request: NextRequest) {
     // Verificar autenticación
     const session = await getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { message: "No autorizado" }, 
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { 
-      ticketId, 
-      verificationMethod = 'qr_scan',
-      location,
-      notes 
-    } = body;
+    const { ticketId, verificationMethod = "qr_scan", location, notes } = body;
 
     // Validar datos requeridos
     if (!ticketId) {
@@ -39,21 +31,26 @@ export async function POST(request: NextRequest) {
       verificationMethod,
       location,
       notes,
-      request
+      request,
     });
 
     if (result.success) {
-      return NextResponse.json({
-        message: result.message,
-        checkIn: result.data
-      }, { status: 200 });
+      return NextResponse.json(
+        {
+          message: result.message,
+          checkIn: result.data,
+        },
+        { status: 200 }
+      );
     } else {
-      return NextResponse.json({
-        message: result.message,
-        error: result.error
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: result.message,
+          error: result.error,
+        },
+        { status: 400 }
+      );
     }
-
   } catch (error) {
     console.error("Error en /api/checkin POST:", error);
     return NextResponse.json(
@@ -71,10 +68,7 @@ export async function GET(request: NextRequest) {
     // Verificar autenticación
     const session = await getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { message: "No autorizado" }, 
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -89,15 +83,14 @@ export async function GET(request: NextRequest) {
 
     // Validar elegibilidad
     const validation = await CheckInService.validateCheckInEligibility(
-      ticketId, 
+      ticketId,
       session.user.id
     );
 
     return NextResponse.json({
       eligible: validation.eligible,
-      reason: validation.reason
+      reason: validation.reason,
     });
-
   } catch (error) {
     console.error("Error en /api/checkin GET:", error);
     return NextResponse.json(

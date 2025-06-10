@@ -12,8 +12,8 @@ interface ICheckIn extends mongoose.Document {
     latitude: number;
     longitude: number;
   };
-  verificationMethod: 'qr_scan' | 'manual' | 'nfc';
-  status: 'successful' | 'failed' | 'duplicate';
+  verificationMethod: "qr_scan" | "manual" | "nfc";
+  status: "successful" | "failed" | "duplicate";
   notes?: string;
   verifiedBy?: mongoose.Types.ObjectId; // ID del staff que verificó (si aplica)
 }
@@ -69,14 +69,14 @@ const CheckInSchema = new mongoose.Schema(
     },
     verificationMethod: {
       type: String,
-      enum: ['qr_scan', 'manual', 'nfc'],
-      default: 'qr_scan',
+      enum: ["qr_scan", "manual", "nfc"],
+      default: "qr_scan",
       required: true,
     },
     status: {
       type: String,
-      enum: ['successful', 'failed', 'duplicate'],
-      default: 'successful',
+      enum: ["successful", "failed", "duplicate"],
+      default: "successful",
       required: true,
     },
     notes: {
@@ -89,7 +89,7 @@ const CheckInSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { 
+  {
     timestamps: true,
   }
 );
@@ -102,72 +102,75 @@ CheckInSchema.index({ checkInTime: -1 });
 CheckInSchema.index({ status: 1, eventId: 1 });
 
 // Métodos estáticos
-CheckInSchema.statics.findByTicket = function(ticketId: string) {
+CheckInSchema.statics.findByTicket = function (ticketId: string) {
   return this.findOne({ ticketId });
 };
 
-CheckInSchema.statics.findByEvent = function(eventId: string) {
-  return this.find({ eventId, status: 'successful' })
-    .populate('ticketId', 'eventName price')
-    .populate('userId', 'name email')
+CheckInSchema.statics.findByEvent = function (eventId: string) {
+  return this.find({ eventId, status: "successful" })
+    .populate("ticketId", "eventName price")
+    .populate("userId", "name email")
     .sort({ checkInTime: -1 });
 };
 
-CheckInSchema.statics.getEventCheckInStats = async function(eventId: string) {
+CheckInSchema.statics.getEventCheckInStats = async function (eventId: string) {
   const stats = await this.aggregate([
     { $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
     {
       $group: {
-        _id: '$status',
+        _id: "$status",
         count: { $sum: 1 },
-        latestCheckIn: { $max: '$checkInTime' }
-      }
-    }
+        latestCheckIn: { $max: "$checkInTime" },
+      },
+    },
   ]);
-  
-  const totalCheckIns = await this.countDocuments({ 
-    eventId: new mongoose.Types.ObjectId(eventId), 
-    status: 'successful' 
+
+  const totalCheckIns = await this.countDocuments({
+    eventId: new mongoose.Types.ObjectId(eventId),
+    status: "successful",
   });
-  
+
   const checkInsPerHour = await this.aggregate([
-    { 
-      $match: { 
+    {
+      $match: {
         eventId: new mongoose.Types.ObjectId(eventId),
-        status: 'successful',
-        checkInTime: { 
-          $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24 horas
-        }
-      }
+        status: "successful",
+        checkInTime: {
+          $gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // últimas 24 horas
+        },
+      },
     },
     {
       $group: {
-        _id: { 
-          hour: { $hour: '$checkInTime' },
-          date: { $dateToString: { format: '%Y-%m-%d', date: '$checkInTime' } }
+        _id: {
+          hour: { $hour: "$checkInTime" },
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$checkInTime" } },
         },
-        count: { $sum: 1 }
-      }
+        count: { $sum: 1 },
+      },
     },
-    { $sort: { '_id.date': -1, '_id.hour': -1 } }
+    { $sort: { "_id.date": -1, "_id.hour": -1 } },
   ]);
-  
+
   return {
     statusBreakdown: stats,
     totalSuccessfulCheckIns: totalCheckIns,
-    checkInsPerHour: checkInsPerHour.slice(0, 24) // últimas 24 horas
+    checkInsPerHour: checkInsPerHour.slice(0, 24), // últimas 24 horas
   };
 };
 
-CheckInSchema.statics.isTicketAlreadyCheckedIn = async function(ticketId: string) {
-  const existingCheckIn = await this.findOne({ 
+CheckInSchema.statics.isTicketAlreadyCheckedIn = async function (
+  ticketId: string
+) {
+  const existingCheckIn = await this.findOne({
     ticketId: new mongoose.Types.ObjectId(ticketId),
-    status: 'successful'
+    status: "successful",
   });
   return !!existingCheckIn;
 };
 
-const CheckIn = (mongoose.models.CheckIn as ICheckInModel) || 
+const CheckIn =
+  (mongoose.models.CheckIn as ICheckInModel) ||
   mongoose.model<ICheckIn, ICheckInModel>("CheckIn", CheckInSchema);
 
 export default CheckIn;
