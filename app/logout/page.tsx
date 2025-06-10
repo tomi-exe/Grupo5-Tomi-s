@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Loading from "../Components/Loading";
+import Loading from "../../components/Loading";
 
 export default function Logout() {
   const router = useRouter();

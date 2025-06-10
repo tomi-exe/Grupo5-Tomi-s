@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
-import { useToast } from '../Components/Toast';
+import { useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import { useToast } from "../../components/Toast";
 
 export default function QRTestingPage() {
   const toast = useToast();
@@ -17,7 +17,7 @@ export default function QRTestingPage() {
     setScanner(html5QrCode);
 
     html5QrCode.start(
-      { facingMode: 'environment' },
+      { facingMode: "environment" },
       {
         fps: 10,
         qrbox: { width: 250, height: 250 },
@@ -62,10 +62,14 @@ export default function QRTestingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen p-4">
-      <h1 className="text-xl font-bold mb-4 text-white">Escanea tu código QR</h1>
-      <div ref={scannerRef} id="reader" className="w-full max-w-md border-2 border-white rounded" />
+      <h1 className="text-xl font-bold mb-4 text-white">
+        Escanea tu código QR
+      </h1>
+      <div
+        ref={scannerRef}
+        id="reader"
+        className="w-full max-w-md border-2 border-white rounded"
+      />
     </div>
   );
 }
-
-

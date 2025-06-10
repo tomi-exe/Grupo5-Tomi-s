@@ -4,7 +4,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import Loading from "@/app/Components/Loading";
+import Loading from "@/components/Loading";
 
 export default function PaymentPage() {
   const router = useRouter();

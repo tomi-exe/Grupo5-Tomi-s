@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Loading from "../Components/Loading";
+import Loading from "../../components/Loading";
 
 interface Ticket {
   _id: string;

@@ -1,10 +1,9 @@
 "use client";
-
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import QrScanner from "@/app/staff/checkin/components/QrScanner.client";
-import TicketPreview from "@/app/staff/checkin/components/TicketPreview.client";
-import CheckInResult from "@/app/staff/checkin/components/CheckInResult.client";
+import QrScanner from "@/components/checkin/QrScanner.client";
+import TicketPreview from "@/components/checkin/TicketPreview.client";
+import CheckInResult from "@/components/checkin/CheckInResult.client";
 
 interface ScannedTicket {
   ticketId: string;
@@ -23,11 +22,10 @@ export default function CheckInPage() {
     message: string;
   } | null>(null);
 
-  // Callback al leer QR
   const handleScan = (data: string) => {
     try {
       const obj = JSON.parse(data) as ScannedTicket;
-      if (!obj.ticketId || !obj.eventId) throw new Error("Faltan datos");
+      if (!obj.ticketId || !obj.eventId) throw new Error("Datos incompletos");
       setScanned(obj);
       setError(null);
       setStage("preview");
@@ -35,13 +33,10 @@ export default function CheckInPage() {
       setError("QR inválido: " + e.message);
     }
   };
-
   const handleError = (err: Error) => {
     console.error(err);
-    setError("Error al acceder a la cámara");
+    setError("Error cámara");
   };
-
-  // Confirmar check-in
   const handleConfirm = async () => {
     if (!scanned) return;
     setLoading(true);
@@ -56,11 +51,10 @@ export default function CheckInPage() {
         }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setResult({ success: true, message: "✅ Check-In registrado" });
-      } else {
-        setResult({ success: false, message: `⚠️ ${data.message}` });
-      }
+      setResult({
+        success: res.ok,
+        message: res.ok ? "✅ Check-In registrado" : `⚠️ ${data.message}`,
+      });
       setStage("result");
     } catch {
       setResult({ success: false, message: "❌ Error de red" });
@@ -69,8 +63,6 @@ export default function CheckInPage() {
       setLoading(false);
     }
   };
-
-  // Reset de flujo
   const handleReset = () => {
     setStage("scan");
     setScanned(null);
@@ -82,7 +74,6 @@ export default function CheckInPage() {
   return (
     <div className="min-h-screen bg-[#111a22] text-white flex flex-col items-center p-6">
       <h1 className="text-3xl font-bold mb-6">Sistema de Check-In</h1>
-
       <AnimatePresence mode="wait" initial={false}>
         {stage === "scan" && (
           <motion.div
@@ -90,13 +81,12 @@ export default function CheckInPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full max-w-md flex flex-col items-center gap-4"
+            className="w-full max-w-md"
           >
             <QrScanner onScan={handleScan} onError={handleError} />
-            {error && <p className="text-red-400">{error}</p>}
+            {error && <p className="mt-4 text-red-400">{error}</p>}
           </motion.div>
         )}
-
         {stage === "preview" && scanned && (
           <motion.div
             key="preview"
@@ -113,7 +103,6 @@ export default function CheckInPage() {
             />
           </motion.div>
         )}
-
         {stage === "result" && result && (
           <motion.div
             key="result"

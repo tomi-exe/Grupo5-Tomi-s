@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Loading from "../Components/Loading";
+import Loading from "../../components/Loading";
 import { QRCode } from "react-qrcode-logo";
 import { X } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
@@ -64,10 +64,10 @@ export default function MyTickets() {
   const toggleSale = async (id: string, currentlyForSale: boolean) => {
     const ticket = tickets.find((t) => t._id === id);
     if (ticket?.isUsed) {
-    toast.error("❌ Este ticket no puede ser puesto a la venta.");
-    return;
+      toast.error("❌ Este ticket no puede ser puesto a la venta.");
+      return;
     }
-    
+
     const url = `/api/resale/tickets/${id}`;
     const body = { forSale: !currentlyForSale };
 
