@@ -91,6 +91,12 @@ export default function Navbar() {
           HISTORIAL DE COMPRAS
         </Link>
         <Link
+          href="/organizer/dashboard"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-blue-600/20 border border-blue-600/50"
+        >
+          📊 DASHBOARD ORGANIZADOR
+        </Link>
+        <Link
           href="/admin/transfers"
           className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-orange-600/20 border border-orange-600/50"
         >

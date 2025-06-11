@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Calendar, MapPin, User, Clock, Check, Smartphone, Wifi, QrCode, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, User, Clock, Check, Smartphone, Wifi, QrCode, ArrowLeft, AlertTriangle, Users, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Loading from '../Components/Loading';
+import { useToast } from '../Components/Toast';
 
-// Simulamos datos adicionales del usuario (esto vendría de la sesión/API)
+// Datos simulados del usuario (esto vendría de la sesión/API)
 const mockUserData = {
   userName: "Juan Carlos Pérez",
   userEmail: "juan.perez@email.com",
@@ -16,15 +17,32 @@ const mockUserData = {
   seatNumber: "Asiento 15",
 };
 
-export default function CheckInPage() {
+interface CapacityInfo {
+  maximum: number;
+  current: number;
+  available: number;
+  occupancyPercentage: number;
+  isFull: boolean;
+}
+
+interface CheckInValidation {
+  eligible: boolean;
+  reason: string;
+}
+
+export default function EnhancedCheckInPage() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [ticketData, setTicketData] = useState<any>(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [capacityInfo, setCapacityInfo] = useState<CapacityInfo | null>(null);
+  const [validation, setValidation] = useState<CheckInValidation | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
+  const addToast = useToast();
 
   // Actualizar la hora cada segundo
   useEffect(() => {
@@ -42,17 +60,15 @@ export default function CheckInPage() {
     const price = searchParams.get('price');
 
     if (!ticketId || !eventName || !eventDate || !price) {
-      // Si no hay parámetros, redirigir a mis tickets
       router.push('/my-tickets');
       return;
     }
 
-    // Construir objeto de ticket con datos de URL + mock data
     const ticket = {
       id: ticketId,
       eventName: decodeURIComponent(eventName),
       eventDate: eventDate,
-      eventLocation: "Estadio Nacional, Santiago", // Esto podría venir de una API
+      eventLocation: "Estadio Nacional, Santiago",
       price: parseInt(price),
       ...mockUserData,
       checkInStatus: false
@@ -60,37 +76,70 @@ export default function CheckInPage() {
 
     setTicketData(ticket);
     setPageLoading(false);
+
+    // Cargar información de capacidad y validación
+    loadCapacityAndValidation(eventName, ticketId);
   }, [searchParams, router]);
 
-  // Generar datos para el QR
-  const qrData = ticketData ? JSON.stringify({
-    ticketId: ticketData.id,
-    eventName: ticketData.eventName,
-    userName: ticketData.userName,
-    eventDate: ticketData.eventDate,
-    location: ticketData.eventLocation,
-    checkInTime: currentTime.toISOString(),
-    signature: "TZ_VERIFIED_" + ticketData.id
-  }) : "";
+  const loadCapacityAndValidation = async (eventName: string, ticketId: string) => {
+    setIsValidating(true);
+    
+    try {
+      // Cargar información de capacidad
+      const capacityResponse = await fetch(`/api/events/capacity?eventName=${encodeURIComponent(eventName)}`);
+      if (capacityResponse.ok) {
+        const capacityData = await capacityResponse.json();
+        setCapacityInfo(capacityData.capacity);
+      }
+
+      // Validar elegibilidad para check-in
+      const validationResponse = await fetch(`/api/checkin?ticketId=${ticketId}`);
+      if (validationResponse.ok) {
+        const validationData = await validationResponse.json();
+        setValidation(validationData);
+      }
+    } catch (error) {
+      console.error('Error cargando información:', error);
+      addToast('Error al verificar la información del evento', 'error');
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   const handleCheckIn = async () => {
+    if (!validation?.eligible) {
+      addToast(validation?.reason || 'No se puede realizar check-in', 'error');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Aquí podrías hacer una llamada a tu API de check-in
-      // const response = await fetch('/api/checkin', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ ticketId: ticketData.id })
-      // });
-      
-      // Simular proceso de check-in
-      setTimeout(() => {
+      const response = await fetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          ticketId: ticketData.id,
+          verificationMethod: 'qr_scan',
+          notes: 'Check-in desde aplicación web'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
         setIsCheckedIn(true);
-        setIsLoading(false);
-      }, 2000);
+        setCapacityInfo(data.checkIn.capacityInfo);
+        addToast('¡Check-in realizado exitosamente!', 'success');
+      } else {
+        addToast(data.message || 'Error realizando check-in', 'error');
+        // Recargar validación en caso de error
+        await loadCapacityAndValidation(ticketData.eventName, ticketData.id);
+      }
     } catch (error) {
       console.error('Error en check-in:', error);
+      addToast('Error de conexión. Intenta nuevamente.', 'error');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -109,6 +158,19 @@ export default function CheckInPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getCapacityColor = (percentage: number) => {
+    if (percentage >= 95) return 'text-red-400 bg-red-500/20 border-red-500/50';
+    if (percentage >= 80) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/50';
+    if (percentage >= 60) return 'text-orange-400 bg-orange-500/20 border-orange-500/50';
+    return 'text-green-400 bg-green-500/20 border-green-500/50';
+  };
+
+  const getValidationColor = (eligible: boolean) => {
+    return eligible 
+      ? 'text-green-400 bg-green-500/20 border-green-500/50'
+      : 'text-red-400 bg-red-500/20 border-red-500/50';
   };
 
   if (pageLoading) {
@@ -150,7 +212,7 @@ export default function CheckInPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">TicketZone Check-in</h1>
-                <p className="text-sm text-gray-400">Verificación de entrada</p>
+                <p className="text-sm text-gray-400">Verificación de entrada con control de aforo</p>
               </div>
             </div>
             <div className="text-right">
@@ -193,6 +255,52 @@ export default function CheckInPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Información de Capacidad */}
+              {capacityInfo && (
+                <div className={`p-4 rounded-lg border mb-4 ${getCapacityColor(capacityInfo.occupancyPercentage)}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      <span className="font-semibold">Aforo del Evento</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {capacityInfo.occupancyPercentage}% ocupado
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    {capacityInfo.current} / {capacityInfo.maximum} personas
+                  </div>
+                  <div className="text-xs mt-1">
+                    {capacityInfo.available} espacios disponibles
+                  </div>
+                  {capacityInfo.isFull && (
+                    <div className="flex items-center gap-2 mt-2 text-red-400">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="text-xs font-medium">Evento lleno</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Estado de Validación */}
+              {validation && (
+                <div className={`p-4 rounded-lg border mb-4 ${getValidationColor(validation.eligible)}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {validation.eligible ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5" />
+                    )}
+                    <span className="font-semibold">
+                      {validation.eligible ? 'Apto para Check-in' : 'No Apto para Check-in'}
+                    </span>
+                  </div>
+                  <div className="text-xs">
+                    {validation.reason}
+                  </div>
+                </div>
+              )}
               
               {/* Estado del Check-in */}
               {isCheckedIn ? (
@@ -206,13 +314,18 @@ export default function CheckInPage() {
                       <div className="text-sm text-green-300">
                         {currentTime.toLocaleString('es-CL')}
                       </div>
+                      {capacityInfo && (
+                        <div className="text-xs text-green-300 mt-1">
+                          Aforo actualizado: {capacityInfo.current}/{capacityInfo.maximum}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               ) : (
                 <button
                   onClick={handleCheckIn}
-                  disabled={isLoading}
+                  disabled={isLoading || isValidating || !validation?.eligible}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
@@ -220,10 +333,20 @@ export default function CheckInPage() {
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Procesando Check-in...
                     </>
-                  ) : (
+                  ) : isValidating ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Validando...
+                    </>
+                  ) : validation?.eligible ? (
                     <>
                       <Check className="w-5 h-5" />
                       Realizar Check-in
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-5 h-5" />
+                      Check-in No Disponible
                     </>
                   )}
                 </button>
@@ -334,19 +457,19 @@ export default function CheckInPage() {
               <div className="space-y-3 text-sm text-gray-300">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
-                  <p>Asegúrate de tener el brillo de tu pantalla al máximo</p>
+                  <p>Verifica que tienes conexión estable y el ticket es válido</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-                  <p>Presenta este código QR al personal de seguridad en la entrada</p>
+                  <p>Revisa que el evento tenga espacios disponibles</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
-                  <p>Ten tu identificación personal lista para verificar tu identidad</p>
+                  <p>Haz clic en "Realizar Check-in" cuando estés listo</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</div>
-                  <p>Sigue las indicaciones del personal para dirigirte a tu sector</p>
+                  <p>Presenta la confirmación al personal de entrada</p>
                 </div>
               </div>
             </div>
@@ -371,7 +494,8 @@ export default function CheckInPage() {
         <div className="mt-8 bg-[#192734] rounded-2xl p-6 border border-[#233748] shadow-lg">
           <div className="text-center text-sm text-gray-400">
             <p className="mb-2">
-              ⚠️ <strong>Importante:</strong> Este código QR es único y personal. No lo compartas con terceros.
+              ⚠️ <strong>Importante:</strong> El sistema controla automáticamente el aforo del evento. 
+              Si el evento está lleno, no se permitirán más ingresos.
             </p>
             <p>
               Para soporte técnico, contacta al personal de TicketZone en el evento o envía un email a soporte@ticketzone.cl
