@@ -5,8 +5,8 @@ import EventModel from "@/models/Event";
 
 export async function POST(req: NextRequest) {
   await connectToDB();
-
   const { qrCode } = await req.json();
+
   if (!qrCode) {
     return NextResponse.json(
       { success: false, message: "QR code is missing" },
@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ticket = await TicketModel.findOne({ qrCode });
+  // Castea a any para poder usar findOne sin errores de TS
+  const Ticket = TicketModel as any;
+  const ticket = await Ticket.findOne({ qrCode });
 
   if (!ticket) {
     return NextResponse.json(
@@ -34,7 +36,9 @@ export async function POST(req: NextRequest) {
   ticket.checkInDate = new Date();
   await ticket.save();
 
-  const event = await EventModel.findOne({ name: ticket.eventName });
+  // Mismo truco para el EventModel
+  const Event = EventModel as any;
+  const event = await Event.findOne({ name: ticket.eventName });
 
   if (!event) {
     return NextResponse.json(

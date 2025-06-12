@@ -103,6 +103,13 @@ export default function Navbar() {
           CHECK-IN
         </Link>
         <Link
+          href="/admin/coupons"
+          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-green-600/20 border border-green-600/50"
+        >
+          CUPONES
+        </Link>
+
+        <Link
           href="/logout"
           className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black"
         >
