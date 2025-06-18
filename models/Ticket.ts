@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 // Interfaces para tipado TypeScript
 interface ITicket extends mongoose.Document {
@@ -56,13 +57,11 @@ const TicketSchema = new mongoose.Schema(
 
     // Propietarios
     userId: {
-      // Propietario original (nunca cambia)
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
     currentOwnerId: {
-      // Propietario actual (se actualiza en cada transferencia)
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -105,20 +104,15 @@ const TicketSchema = new mongoose.Schema(
   }
 );
 
-// 🔑 Pre-save: actualizar transferCount, fechas y precios
+// Hook: ajustar transferCount, fechas y originalPrice
 TicketSchema.pre("save", function (next) {
-  // Si cambió de dueño (no es nuevo), actualizar contador y fecha
   if (this.isModified("currentOwnerId") && !this.isNew) {
     this.transferCount = (this.transferCount || 0) + 1;
     this.lastTransferDate = new Date();
   }
-
-  // Si es nuevo y no tiene currentOwnerId, ponerlo igual a userId
   if (this.isNew && !this.currentOwnerId) {
     this.currentOwnerId = this.userId;
   }
-
-  // Si es nuevo y no tiene originalPrice, fijarlo al precio inicial
   if (this.isNew && !this.originalPrice) {
     this.originalPrice = this.price;
   }
@@ -131,7 +125,7 @@ TicketSchema.pre("save", function (next) {
   next();
 });
 
-// 📈 Índices para consultas rápidas
+// Índices para búsquedas frecuentes
 TicketSchema.index({ userId: 1, eventDate: -1 });
 TicketSchema.index({ currentOwnerId: 1, eventDate: -1 });
 TicketSchema.index({ forSale: 1, eventDate: 1 });
@@ -140,9 +134,9 @@ TicketSchema.index({ status: 1, eventDate: 1 });
 TicketSchema.index({ eventId: 1, status: 1 }); // Nuevo índice para eventos
 TicketSchema.index({ checkInDate: -1 }); // Nuevo índice para check-ins
 
-// 🔮 Virtuals
+// Virtuals
 TicketSchema.virtual("isTransferred").get(function () {
-  return this.transferCount > 0;
+  return (this.transferCount || 0) > 0;
 });
 TicketSchema.virtual("daysSincePurchase").get(function () {
   return Math.floor(
