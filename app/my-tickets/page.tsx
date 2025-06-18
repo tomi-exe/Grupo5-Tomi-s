@@ -18,6 +18,7 @@ interface Ticket {
   forSale: boolean;
   isUsed: boolean;
   transferDate?: string | null;
+  qrCode: string;
 }
 
 export default function MyTickets() {
@@ -217,7 +218,7 @@ export default function MyTickets() {
             </h2>
             <div className="flex justify-center mb-4">
               <QRCode
-                value={JSON.stringify(selectedTicket)}
+                value={selectedTicket.qrCode}
                 size={200}
                 qrStyle="dots"
                 logoImage="https://example.com/logo.png"
