@@ -24,6 +24,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-qr-barcode-scanner": "^2.1.7",
     "react-qrcode-logo": "^3.0.0",
     "react-toastify": "^11.0.5",
     "swr": "^2.3.3"
