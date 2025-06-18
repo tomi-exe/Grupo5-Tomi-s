@@ -1,7 +1,7 @@
 "use client";
-import dynamic from "next/dynamic";
 import { useState, useCallback } from "react";
 import Loading from "@/components/Loading";
+import dynamic from "next/dynamic";
 
 const BarcodeScanner = dynamic(() => import("react-qr-barcode-scanner"), {
   ssr: false,
@@ -18,12 +18,10 @@ export default function StaffCheckInPage() {
   const handleUpdate = useCallback(
     (_err: unknown, result?: any) => {
       if (!result) return;
-      // If result is null, do nothing
-      if (result === null) return;
-      // Use getText() method to access the QR code string
       const code =
         typeof result.getText === "function" ? result.getText() : result.text;
-      if (code === qr) return; // no re-send same code
+      if (!code || code === qr) return;
+      console.log("QR scanned:", code);
       setQr(code);
       setLoading(true);
       setFeedback(null);
@@ -36,9 +34,11 @@ export default function StaffCheckInPage() {
         .then(async (res) => {
           const json = await res.json();
           if (!res.ok) throw new Error(json.message || "Check-in failed");
+          console.log("Check-in successful", json);
           setFeedback({ type: "success", text: json.message });
         })
         .catch((e: any) => {
+          console.error("Check-in error", e);
           setFeedback({ type: "error", text: e.message });
         })
         .finally(() => {
@@ -48,15 +48,18 @@ export default function StaffCheckInPage() {
     [qr]
   );
 
+  const handleError = useCallback((err: Error) => {
+    console.error("Scanner error", err);
+    setFeedback({ type: "error", text: err.message });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#111a22] text-white p-6 flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-6">Staff QR Check-in</h1>
 
-      <div className="w-full max-w-lg aspect-square sm:aspect-video bg-[#192734] rounded-lg overflow-hidden shadow-lg relative">
-        <div style={{ width: "100%", height: "100%" }}>
-          <BarcodeScanner onUpdate={handleUpdate} />
-        </div>
-        <div className="absolute inset-0 pointer-events-none border-4 border-dashed border-blue-400 rounded-lg animate-pulse" />
+      <div className="w-full max-w-lg bg-[#192734] rounded-lg overflow-hidden shadow-lg relative p-4">
+        <BarcodeScanner onUpdate={handleUpdate} onError={handleError} />
+        <div className="absolute inset-0 pointer-events-none border-4 border-dashed border-blue-400 rounded-lg" />
       </div>
 
       {loading && <Loading text="Procesando..." />}
