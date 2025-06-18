@@ -48,9 +48,15 @@ export default function StaffCheckInPage() {
     [qr]
   );
 
-  const handleError = useCallback((err: Error) => {
+  const handleError = useCallback((err: unknown) => {
     console.error("Scanner error", err);
-    setFeedback({ type: "error", text: err.message });
+    const message =
+      typeof err === "string"
+        ? err
+        : err instanceof DOMException
+        ? err.message
+        : "Unknown scanner error";
+    setFeedback({ type: "error", text: message });
   }, []);
 
   return (
