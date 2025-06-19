@@ -99,6 +99,8 @@ export default function AdminCouponManagement() {
     customCode: ''
   });
 
+  const [submitting, setSubmitting] = useState(false);
+
   // Datos simulados para demostración
   const mockEvents: Event[] = [
     {
@@ -195,30 +197,36 @@ export default function AdminCouponManagement() {
     }, 1000);
   }, []);
 
-  const handleCreateCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validaciones básicas
-    if (!formData.title || !formData.description || !selectedEvent) {
-      alert('Por favor completa todos los campos requeridos');
-      return;
-    }
+// Reemplaza la función handleCreateCoupon en app/admin/coupons/page.tsx
 
-    if (formData.discountType === 'percentage' && formData.discountValue > 100) {
-      alert('El descuento porcentual no puede ser mayor al 100%');
-      return;
-    }
+const handleCreateCoupon = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Validaciones básicas
+  if (!formData.title || !formData.description || !selectedEvent) {
+    alert('Por favor completa todos los campos requeridos');
+    return;
+  }
 
-    if (new Date(formData.validFrom) >= new Date(formData.validUntil)) {
-      alert('La fecha de inicio debe ser anterior a la fecha de fin');
-      return;
-    }
+  if (formData.discountType === 'percentage' && formData.discountValue > 100) {
+    alert('El descuento porcentual no puede ser mayor al 100%');
+    return;
+  }
 
-    try {
-      // Simular creación de cupón
-      const newCoupon: Coupon = {
-        _id: (Math.random() * 1000).toString(),
-        code: formData.customCode || generateCouponCode(),
+  if (new Date(formData.validFrom) >= new Date(formData.validUntil)) {
+    alert('La fecha de inicio debe ser anterior a la fecha de fin');
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    // ✅ USAR EL ENDPOINT REAL DE LA API
+    const response = await fetch('/api/admin/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId: selectedEvent,
         title: formData.title,
         description: formData.description,
         discountType: formData.discountType,
@@ -228,28 +236,62 @@ export default function AdminCouponManagement() {
         validFrom: formData.validFrom,
         validUntil: formData.validUntil,
         maxUses: formData.maxUses,
-        currentUses: 0,
-        usagePercentage: 0,
-        isActive: true,
         targetAudience: formData.targetAudience,
-        eventName: events.find(e => e._id === selectedEvent)?.eventName || '',
-        eventId: selectedEvent,
-        createdBy: {
-          name: 'Admin User',
-          email: 'admin@ticketzone.cl'
-        },
-        createdAt: new Date().toISOString()
-      };
+        customCode: formData.customCode || undefined
+      })
+    });
 
-      setCoupons(prev => [newCoupon, ...prev]);
+    const data = await response.json();
+
+    if (response.ok) {
+      alert('Cupón creado exitosamente');
       setShowCreateForm(false);
       resetForm();
-      alert('Cupón creado exitosamente');
-    } catch (error) {
-      console.error('Error creating coupon:', error);
-      alert('Error al crear cupón');
+      
+      // ✅ RECARGAR CUPONES DESDE LA BASE DE DATOS
+      await fetchCouponsFromAPI();
+    } else {
+      alert(data.message || 'Error al crear cupón');
     }
-  };
+  } catch (error) {
+    console.error('Error creating coupon:', error);
+    alert('Error al crear cupón');
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+// ✅ NUEVA FUNCIÓN PARA CARGAR CUPONES DESDE LA API
+const fetchCouponsFromAPI = async () => {
+  try {
+    const response = await fetch('/api/admin/coupons?includeExpired=true');
+    const data = await response.json();
+    
+    if (response.ok) {
+      setCoupons(data.coupons || []);
+    } else {
+      alert('Error al cargar cupones');
+    }
+  } catch (error) {
+    console.error('Error fetching coupons:', error);
+    alert('Error al cargar cupones');
+  }
+};
+
+// ✅ REEMPLAZAR EL useEffect INICIAL
+useEffect(() => {
+  // Cargar eventos (mantener la lógica actual)
+  setTimeout(() => {
+    setEvents(mockEvents);
+    if (mockEvents.length > 0) {
+      setSelectedEvent(mockEvents[0]._id);
+    }
+  }, 500);
+
+  // ✅ CARGAR CUPONES REALES DESDE LA API
+  fetchCouponsFromAPI();
+  setLoading(false);
+}, []);
 
   const handleEditCoupon = (coupon: Coupon) => {
     setEditingCoupon(coupon);
