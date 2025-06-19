@@ -199,7 +199,7 @@ CouponSchema.statics.findValidCouponsForEvent = function(eventId: string) {
 
 CouponSchema.statics.findUserCouponsForEvent = function(userId: string, eventId: string) {
   // Esta función necesitaría una colección de CouponUsage para rastrear uso por usuario
-  return this.findValidCouponsForEvent(eventId);
+  return (this as ICouponModel).findValidCouponsForEvent(eventId);
 };
 
 CouponSchema.statics.generateCouponCode = function(): string {
@@ -214,11 +214,11 @@ CouponSchema.statics.generateCouponCode = function(): string {
 CouponSchema.statics.createEventCoupon = async function(couponData: any): Promise<ICoupon> {
   // Generar código único si no se proporciona
   if (!couponData.code) {
-    let code: string;
+    let code = '';
     let exists = true;
     
     while (exists) {
-      code = this.generateCouponCode();
+      code = (this as ICouponModel).generateCouponCode();
       const existingCoupon = await this.findOne({ code });
       exists = !!existingCoupon;
     }
@@ -257,14 +257,19 @@ CouponSchema.methods.canBeUsedBy = async function(userId: string, eventId: strin
   }
   
   // Verificar uso previo por usuario (necesitaría CouponUsage)
-  const CouponUsage = mongoose.model('CouponUsage');
-  const previousUsage = await CouponUsage.findOne({
-    couponId: this._id,
-    userId: userId
-  });
-  
-  if (previousUsage) {
-    return false; // Ya fue usado por este usuario
+  try {
+    const CouponUsage = mongoose.model('CouponUsage');
+    const previousUsage = await CouponUsage.findOne({
+      couponId: this._id,
+      userId: userId
+    });
+    
+    if (previousUsage) {
+      return false; // Ya fue usado por este usuario
+    }
+  } catch (error) {
+    // Si el modelo CouponUsage no existe, continuar sin error
+    console.log('CouponUsage model not found, skipping usage check');
   }
   
   return true;
@@ -277,13 +282,18 @@ CouponSchema.methods.useCoupon = async function(userId: string): Promise<ICoupon
   
   this.currentUses += 1;
   
-  // Registrar el uso en CouponUsage
-  const CouponUsage = mongoose.model('CouponUsage');
-  await CouponUsage.create({
-    couponId: this._id,
-    userId: userId,
-    usedAt: new Date()
-  });
+  // Registrar el uso en CouponUsage si el modelo existe
+  try {
+    const CouponUsage = mongoose.model('CouponUsage');
+    await CouponUsage.create({
+      couponId: this._id,
+      userId: userId,
+      usedAt: new Date()
+    });
+  } catch (error) {
+    // Si el modelo CouponUsage no existe, continuar sin error
+    console.log('CouponUsage model not found, skipping usage record');
+  }
   
   return await this.save();
 };
