@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
   rut: { type: String, required: true, unique: true },
   role: {
     type: String,
-    enum: ["user", "admin"],
+    enum: ["user", "admin", "organizer"],
     default: "user"
   }
 }, { timestamps: true });
