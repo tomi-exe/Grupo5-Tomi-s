@@ -90,21 +90,13 @@ export default function Navbar() {
         >
           HISTORIAL DE COMPRAS
         </Link>
-        
-        {/* Panel de Organizador */}
-        <Link
-          href="/organizer/dashboard"
-          className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-blue-600/20 border border-blue-600/50"
-        >
-          📊 DASHBOARD ORGANIZADOR
-        </Link>
-        
+
         {/* Panel de Administración */}
         <div className="relative group">
           <div className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-purple-600/20 border border-purple-600/50 cursor-pointer">
             🔧 ADMINISTRACIÓN
           </div>
-          
+
           {/* Submenu de administración */}
           <div className="absolute right-0 mt-2 w-48 bg-[#192734] border border-[#233748] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
             <Link
@@ -112,6 +104,12 @@ export default function Navbar() {
               className="block px-4 py-2 text-sm hover:bg-[#233748] rounded-t-lg"
             >
               📋 Transferencias
+            </Link>
+            <Link
+              href="/organizer/dashboard"
+              className="block px-4 py-2 text-sm hover:bg-[#233748]"
+            >
+              📊 Dashboard
             </Link>
             <Link
               href="/admin/coupons"
@@ -133,7 +131,7 @@ export default function Navbar() {
             </Link>
           </div>
         </div>
-        
+
         <Link
           href="/staff/checkin"
           className="block px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-white hover:text-black text-sm bg-purple-600/20 border border-red-600/50"
