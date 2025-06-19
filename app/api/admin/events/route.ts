@@ -4,6 +4,7 @@ import { connectToDB } from "@/app/lib/db-utils";
 import User from "@/models/User";
 import Event from "@/models/Event";
 import Ticket from "@/models/Ticket";
+import mongoose from "mongoose";
 
 // Interfaces para tipado
 interface TicketStats {
@@ -119,8 +120,13 @@ export async function GET(request: NextRequest) {
             const availableCapacity = Math.max(0, event.maxCapacity - event.currentCheckedIn);
             const isFull = event.currentCheckedIn >= event.maxCapacity;
 
+            // Convertir tipos de manera segura
+            const eventId = event._id instanceof mongoose.Types.ObjectId 
+              ? event._id.toString() 
+              : String(event._id);
+
             const eventData: EventWithStats = {
-              _id: event._id.toString(),
+              _id: eventId,
               eventName: event.eventName,
               eventDate: event.eventDate.toISOString(),
               location: event.location,
@@ -142,8 +148,12 @@ export async function GET(request: NextRequest) {
             console.error(`Error getting stats for ${event.eventName}:`, error);
             
             // Retornar evento sin estadísticas en caso de error
+            const eventId = event._id instanceof mongoose.Types.ObjectId 
+              ? event._id.toString() 
+              : String(event._id);
+
             const eventData: EventWithStats = {
-              _id: event._id.toString(),
+              _id: eventId,
               eventName: event.eventName,
               eventDate: event.eventDate.toISOString(),
               location: event.location,
@@ -172,8 +182,13 @@ export async function GET(request: NextRequest) {
         const availableCapacity = Math.max(0, event.maxCapacity - event.currentCheckedIn);
         const isFull = event.currentCheckedIn >= event.maxCapacity;
 
+        // Convertir tipos de manera segura
+        const eventId = event._id instanceof mongoose.Types.ObjectId 
+          ? event._id.toString() 
+          : String(event._id);
+
         const eventData: EventWithStats = {
-          _id: event._id.toString(),
+          _id: eventId,
           eventName: event.eventName,
           eventDate: event.eventDate.toISOString(),
           location: event.location,
@@ -363,8 +378,12 @@ export async function POST(request: NextRequest) {
     await event.save();
 
     // Crear respuesta con formato consistente
+    const eventId = event._id instanceof mongoose.Types.ObjectId 
+      ? event._id.toString() 
+      : String(event._id);
+
     const eventResponse: EventWithStats = {
-      _id: event._id.toString(),
+      _id: eventId,
       eventName: event.eventName,
       eventDate: event.eventDate.toISOString(),
       location: event.location,
