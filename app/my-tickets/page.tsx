@@ -1,3 +1,4 @@
+// File: app/my-tickets/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +8,7 @@ import { X } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Interfaz de Ticket
+// Interfaz de Ticket (añadido qrToken)
 interface Ticket {
   _id: string;
   eventName: string;
@@ -18,6 +19,7 @@ interface Ticket {
   forSale: boolean;
   isUsed: boolean;
   transferDate?: string | null;
+  qrToken: string;
 }
 
 export default function MyTickets() {
@@ -34,7 +36,6 @@ export default function MyTickets() {
 
     const fetchTickets = async () => {
       try {
-        const start = Date.now();
         const res = await fetch("/api/tickets", {
           method: "GET",
           credentials: "include",
@@ -57,7 +58,7 @@ export default function MyTickets() {
 
     fetchTickets();
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -101,8 +102,8 @@ export default function MyTickets() {
 
     const res = await fetch("/api/tickets", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
       credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticketId: selectedTransferTicketId,
         newUserId: transferTo,
@@ -217,7 +218,8 @@ export default function MyTickets() {
             </h2>
             <div className="flex justify-center mb-4">
               <QRCode
-                value={JSON.stringify(selectedTicket)}
+                // ← aquí usando qrToken
+                value={selectedTicket.qrToken}
                 size={200}
                 qrStyle="dots"
                 logoImage="https://example.com/logo.png"

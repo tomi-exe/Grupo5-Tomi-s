@@ -1,15 +1,23 @@
+// File: app/api/tickets/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
 import { getSession } from "@/app/lib/auth";
 import { TransferService } from "@/app/lib/transferService";
+import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
+
+const JWT_SECRET = process.env.JWT_SECRET!;
+const TOKEN_EXPIRY = "7d";
 
 export async function POST(request: NextRequest) {
   try {
     await connectToDB();
     const session = await getSession();
-    if (!session?.user)
+    if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
 
     const { eventName, eventDate, price, disp = 1 } = await request.json();
     if (!eventName || !eventDate || price == null) {
@@ -19,7 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // No necesitamos setear qrCode: el default del esquema lo hace
     const ticket = new Ticket({
       eventName,
       eventDate: new Date(eventDate),
@@ -45,18 +52,52 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET: Obtener tickets del usuario
+ *
+ * Modifica el GET para que incluya un JWT firmado por process.env.JWT_SECRET.
  */
 export async function GET(request: NextRequest) {
   try {
     await connectToDB();
     const session = await getSession();
-    if (!session?.user)
+    if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
 
-    const tickets = await Ticket.find({
+    // 1) Definir la forma de nuestro documento lean
+    interface LeanTicket {
+      _id: Types.ObjectId;
+      eventName: string;
+      eventDate: Date;
+      price: number;
+      currentOwnerId?: Types.ObjectId | null;
+    }
+
+    // 2) Hacer la query y castear a nuestro tipo
+    const tickets = (await Ticket.find({
       $or: [{ userId: session.user.id }, { currentOwnerId: session.user.id }],
+    })
+      .lean()
+      .exec()) as unknown as LeanTicket[];
+
+    // 3) Firmar un JWT para cada ticket
+    const ticketsWithToken = tickets.map((t) => {
+      const payload = {
+        id: t._id.toString(),
+        eventName: t.eventName,
+        eventDate: t.eventDate,
+        price: t.price,
+        currentOwnerId: t.currentOwnerId?.toString() ?? null,
+      };
+
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+
+      return {
+        ...t,
+        qrToken: token,
+      };
     });
-    return NextResponse.json({ tickets }, { status: 200 });
+
+    return NextResponse.json({ tickets: ticketsWithToken }, { status: 200 });
   } catch (error) {
     console.error("Error GET /api/tickets:", error);
     return NextResponse.json({ message: "Error interno" }, { status: 500 });
@@ -70,8 +111,9 @@ export async function PUT(request: NextRequest) {
   try {
     await connectToDB();
     const session = await getSession();
-    if (!session?.user)
+    if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
 
     const { ticketId, newUserId } = await request.json();
     if (!ticketId || !newUserId) {
@@ -82,11 +124,12 @@ export async function PUT(request: NextRequest) {
     }
 
     const ticket = await Ticket.findById(ticketId);
-    if (!ticket)
+    if (!ticket) {
       return NextResponse.json(
         { message: "Ticket no encontrado" },
         { status: 404 }
       );
+    }
 
     // Verificar que el usuario actual es el propietario
     if (
@@ -96,7 +139,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: "No autorizado" }, { status: 403 });
     }
 
-    // Registrar la transferencia en el historial ANTES de actualizar el ticket
+    // Registrar la transferencia en el historial antes de actualizar
     await TransferService.recordTransfer({
       ticketId: ticket._id.toString(),
       previousOwnerId:
@@ -108,7 +151,6 @@ export async function PUT(request: NextRequest) {
     });
 
     // Actualizar el ticket
-    const previousOwnerId = ticket.currentOwnerId || ticket.userId;
     ticket.currentOwnerId = newUserId;
     ticket.forSale = false;
     ticket.transferDate = new Date();

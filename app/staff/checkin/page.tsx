@@ -1,11 +1,14 @@
+// File: app/staff/checkin/page.tsx
 "use client";
-import { useState, useCallback } from "react";
-import Loading from "@/components/Loading";
-import dynamic from "next/dynamic";
 
-const BarcodeScanner = dynamic(() => import("react-qr-barcode-scanner"), {
-  ssr: false,
-});
+import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
+import Loading from "@/components/Loading";
+
+const BarcodeScanner = dynamic(
+  () => import("react-qr-barcode-scanner").then((mod) => mod.default),
+  { ssr: false }
+);
 
 export default function StaffCheckInPage() {
   const [qr, setQr] = useState<string | null>(null);
@@ -29,7 +32,7 @@ export default function StaffCheckInPage() {
       fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ qrCode: code }),
+        body: JSON.stringify({ token: code }), // <- now sending `token`
       })
         .then(async (res) => {
           const json = await res.json();
@@ -61,7 +64,11 @@ export default function StaffCheckInPage() {
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white p-6 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-6">Staff QR Check-in</h1>
+      <h1 className="text-3xl font-bold mb-2">Staff QR Check-in</h1>
+      {/* Spanish instruction added here */}
+      <p className="mb-4 text-gray-300">
+        Escanea el token y lo envía al backend para su verificación.
+      </p>
 
       <div className="w-full max-w-lg bg-[#192734] rounded-lg overflow-hidden shadow-lg relative p-4">
         <BarcodeScanner onUpdate={handleUpdate} onError={handleError} />
