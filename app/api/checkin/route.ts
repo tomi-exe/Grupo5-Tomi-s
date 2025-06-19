@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   // 6) Incrementar asistentes en el evento
   //    —de nuevo cast a any para silenciar TS—
   const event = await (EventModel as any)
-    .findOne({ eventName: ticket.eventName })
+    .findOne({ name: ticket.eventName })
     .exec();
   if (!event) {
     return NextResponse.json(

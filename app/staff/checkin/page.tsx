@@ -77,7 +77,7 @@ export default function StaffCheckInPage() {
 
       {loading && <Loading text="Procesando..." />}
 
-      {feedback && (
+      {feedback && ( 
         <p
           className={`mt-4 p-3 rounded ${
             feedback.type === "success" ? "bg-green-700" : "bg-red-700"
