@@ -22,19 +22,28 @@ export async function POST(request: NextRequest) {
 
     const coupon = await Coupon.findOne({ code });
     if (!coupon) {
-      return NextResponse.json({ message: "Cupón no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Cupón no encontrado" },
+        { status: 404 }
+      );
     }
 
     if (coupon.used) {
-      return NextResponse.json({ message: "Cupón ya canjeado" }, { status: 409 });
+      return NextResponse.json(
+        { message: "Cupón ya canjeado" },
+        { status: 409 }
+      );
     }
 
     // Optional: verify event exists
     let event = null;
     if (eventId) {
-      event = await Event.findById(eventId);
+      event = await (Event as any).findById(eventId);
       if (!event) {
-        return NextResponse.json({ message: "Evento no encontrado" }, { status: 404 });
+        return NextResponse.json(
+          { message: "Evento no encontrado" },
+          { status: 404 }
+        );
       }
     }
 
