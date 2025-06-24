@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - MyTickets
+name: Build and deploy ASP.Net Core app to Azure Web App - MyTickets
 
 on:
   push:
@@ -18,25 +18,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: '22.x'
+          dotnet-version: '8.x'
 
-      - name: npm install, build, and test
-        run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
-      
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
+
+      - name: dotnet publish
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
-          path: .
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     
     permissions:
@@ -47,18 +47,18 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: node-app
+          name: .net-app
       
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1706B1766BD544E682095CA7DEE16880 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C5FB788DD36F4A1DA70277BF7397A25D }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E7F759CAD93F45BE8617D22DCB12CF00 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0FF725B138EA4CF7AB0F7E66100829B3 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_61A1AF277BA84F2BAE2146E10DE45798 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5CA2B0BB8ACA48BEAA1B7A63E1E3940C }}
 
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'MyTickets'
           slot-name: 'Production'
