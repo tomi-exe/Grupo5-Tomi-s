@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 
-// Interface para el modelo User
+// Interface para el modelo User actualizada
 interface IUser extends mongoose.Document {
   email: string;
   password: string;
   name: string;
   rut: string;
-  role?: "user" | "admin";
+  role?: "user" | "admin" | "organizer"; 
 }
 
 interface IUserModel extends mongoose.Model<IUser> {}

@@ -1,11 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-// Tipo del usuario guardado en JWT
+// Tipo del usuario guardado en JWT - ✅ Actualizado con organizer
 export interface SessionUser {
   id: string;
   email: string;
   name: string;
+  role?: "user" | "admin" | "organizer"; // ✅ Agregado "organizer"
 }
 
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET || "secret");
@@ -36,16 +37,12 @@ export async function verifyToken(token: string) {
 export async function setSession(user: SessionUser) {
   const token = await generateToken({ user });
   
-  // Forma simplificada sin usar variable intermedia
-  (await
-    // Forma simplificada sin usar variable intermedia
-    cookies()).set("session", token, {
+  (await cookies()).set("session", token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
   });
 }
-
 
 export async function getSession(): Promise<{ user: SessionUser } | null> {
   const sessionCookie = (await cookies()).get("session");
@@ -55,12 +52,9 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
   return await verifyToken(token);
 }
 
-
 export async function logout() {
   (await cookies()).set("session", "", {
     expires: new Date(0),
     path: "/",
   });
 }
-
-
