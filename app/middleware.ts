@@ -41,6 +41,24 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // Verificar permisos de organizador para rutas de organizador
+    if (request.nextUrl.pathname.startsWith('/organizer')) {
+      try {
+        await connectToDB();
+        const user = await User.findById(session.user.id);
+        
+        if (!user || (user.role as string) !== 'organizer') {
+          console.log("Access denied: User is not organizer");
+          return NextResponse.redirect(new URL("/events", request.url));
+        }
+        
+        console.log("Organizer access granted for:", request.nextUrl.pathname);
+      } catch (error) {
+        console.error("Error checking organizer permissions:", error);
+        return NextResponse.redirect(new URL("/events", request.url));
+      }
+    }
+
     console.log("Valid session. Proceeding to:", request.nextUrl.pathname);
     return NextResponse.next();
   } catch (error) {
@@ -60,7 +78,7 @@ export const config = {
     "/resale-market/:path*",
     "/api/resale/tickets",
     "/api/resale/tickets/:path*",
-    "/organizer/:path*",
+    "/organizer/:path*", // Proteger todas las rutas de organizador
     "/admin/:path*", // Proteger todas las rutas de admin
     "/api/admin/:path*", // Proteger todas las APIs de admin
     "/transfer-history/:path*",
