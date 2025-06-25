@@ -1,63 +1,95 @@
-# TicketZone
+# 🎟️ TicketZone
 
-TicketZone is a simple event ticketing project built with **Next.js 15**, **TypeScript** and **MongoDB**. It provides basic authentication and pages to browse events or view your tickets.
+**TicketZone** is a modern event ticketing platform built with **Next.js 15**, **TypeScript**, and **MongoDB**. It enables users to browse events, purchase tickets with flexible pricing, and check in securely using QR codes linked to personal identity.
 
-## Features
+---
 
-- Registration and login using JWT sessions stored in cookies.
-- API routes under `app/api/auth` for registering, logging in and logging out users.
-- MongoDB database accessed through Mongoose models.
-- Example pages for events, user tickets and a responsive home page.
-- Tailwind CSS styles loaded from the CDN.
+## 🚀 Features
 
-## Requirements
+- 🔐 Authentication with JWT stored in cookies  
+- 🛒 Ticket purchasing with:
+  - Dynamic pricing (standard, VIP, early-bird)
+  - Bundles and group packages
+  - Real-time availability
+- 📲 QR code generation for digital ticket access
+- 🆔 Identity-linked tickets (QR codes tied to user ID or document)
+- 🎨 Responsive UI with Tailwind CSS
 
-- Node.js 20 or later
-- Access to a MongoDB database
+---
 
-## Getting Started
+## ⚙️ Requirements
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Create a `.env.local` file in the project root with the following variables:
-   ```bash
-   MONGODB_URI=<your MongoDB connection string>
-   JWT_SECRET=<random secret for JWT>
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-   Then open `http://localhost:3000` in your browser.
+- Node.js **20+**
+- MongoDB instance
 
+---
 
-## Unit Testing
+## 🧪 Unit Testing
 
-Unit tests are written with **Jest** using the **ts-jest** preset. Tests live in
-the `__tests__/` directory and can be run with:
+### ✅ Why We Test
+
+Unit testing ensures core features like pricing, ticket generation, and check-in flow work reliably. This is crucial when handling payments and enforcing entry based on personal identity.
+
+Testing allows us to:
+
+- Ensure pricing logic and availability are enforced correctly
+- Verify QR codes are valid, unique, and identity-bound
+- Catch edge cases like reused tickets or mismatched user identities
+
+### 🛠️ How We Test
+
+We use **Jest** with **ts-jest**. Tests are organized in the `__tests__/` directory and use mocked database and identity sessions to isolate behavior.
+
+#### 🔍 Sample Coverage
+
+- **POST `/api/tickets`**
+  - Validates required fields (event ID, type, quantity)
+  - Checks pricing rules and inventory limits
+- **GET `/api/tickets`**
+  - Ensures QR code is attached
+  - Filters for logged-in user's tickets only
+- **POST `/api/checkin`**
+  - Accepts valid, unused QR codes
+  - Rejects reused or mismatched QR entries
+
+### ▶️ Running Tests
+
+Run all tests:
 
 ```bash
 npm test
 ```
+Run a specific file:
+```
+npx jest __tests__/api/tickets.test.ts
+```
+🏗️ Project Structure
+app/
+├── api/
+│   ├── auth/        # User auth API (register, login, logout)
+│   ├── tickets/     # Ticket creation & listing
+│   └── checkin/     # QR code check-in logic
+├── lib/             # Utility functions (DB, JWT, QR)
+├── models/          # Mongoose schemas: User, Event, Ticket
+├── components/      # UI components
+├── styles/          # Tailwind CSS via CDN
+└── __tests__/       # Jest unit tests
 
-POST /api/tickets now has parameterized tests ensuring all required fields are validated.
+📝 Getting Started
+Configure environment variables:
+Create a .env.local file in the project root:
+MONGODB_URI=<your MongoDB connection string>
+JWT_SECRET=<your secret string>
 
-GET /api/tickets verifies that QR tokens are included for logged-in users.
+💡 Notes
+-Dynamic pricing and availability logic is handled per event and tier.
 
-POST /api/checkin covers several error conditions and the successful check-in path.
+-QR codes are tied to the user's identity (e.g., ID card or internal profile).
 
-These tests improve reliability by ensuring both normal and failure scenarios behave as expected.
-Current coverage focuses on utility logic used during registration. Additional tests can be added alongside application
-code under the same directory structure.
+-Check-ins enforce one-time use and identity matching for secure entry.
 
-## Project Structure
+-This architecture is modular and extendable for payment integration, admin tools, and analytics.
 
-- `app/` – Next.js application source code
-- `app/api/auth/` – authentication API routes
-- `app/lib/` – helpers for database connection and JWT
-- `models/` – Mongoose models
-- `antpages/` – legacy examples of older pages
+⚠️ Disclaimer
+This project is provided for educational and prototyping purposes only. Not intended for production without further security and testing layers.
 
-This project is provided for educational purposes.
