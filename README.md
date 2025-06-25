@@ -42,8 +42,14 @@ the `__tests__/` directory and can be run with:
 npm test
 ```
 
-Current coverage focuses on utility logic such as verifying Chilean RUT numbers
-used during registration. Additional tests can be added alongside application
+POST /api/tickets now has parameterized tests ensuring all required fields are validated.
+
+GET /api/tickets verifies that QR tokens are included for logged-in users.
+
+POST /api/checkin covers several error conditions and the successful check-in path.
+
+These tests improve reliability by ensuring both normal and failure scenarios behave as expected.
+Current coverage focuses on utility logic used during registration. Additional tests can be added alongside application
 code under the same directory structure.
 
 ## Project Structure
