@@ -1,108 +1,84 @@
+// File: app/api/checkin/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
+import { connectToDB } from "@/app/lib/mongodb";
+import TicketModel from "@/models/Ticket";
+import EventModel from "@/models/Event";
+import jwt from "jsonwebtoken";
 import { getSession } from "@/app/lib/auth";
-import { CheckInService } from "@/app/lib/checkInService";
 
-/**
- * POST: Procesar check-in de un ticket
- */
-export async function POST(request: NextRequest) {
-  try {
-    // Verificar autenticación
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { message: "No autorizado" }, 
-        { status: 401 }
-      );
-    }
+const JWT_SECRET = process.env.JWT_SECRET!;
 
-    const body = await request.json();
-    const { 
-      ticketId, 
-      verificationMethod = 'qr_scan',
-      location,
-      notes 
-    } = body;
+export async function POST(req: NextRequest) {
+  await connectToDB();
 
-    // Validar datos requeridos
-    if (!ticketId) {
-      return NextResponse.json(
-        { message: "ID del ticket es requerido" },
-        { status: 400 }
-      );
-    }
-
-    // Procesar el check-in
-    const result = await CheckInService.processCheckIn({
-      ticketId,
-      userId: session.user.id,
-      verificationMethod,
-      location,
-      notes,
-      request
-    });
-
-    if (result.success) {
-      return NextResponse.json({
-        message: result.message,
-        checkIn: result.data
-      }, { status: 200 });
-    } else {
-      return NextResponse.json({
-        message: result.message,
-        error: result.error
-      }, { status: 400 });
-    }
-
-  } catch (error) {
-    console.error("Error en /api/checkin POST:", error);
+  // 1) Verificar sesión
+  const session = await getSession();
+  if (!session?.user) {
     return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 }
+      { success: false, message: "No autorizado" },
+      { status: 401 }
     );
   }
-}
 
-/**
- * GET: Validar elegibilidad de check-in para un ticket
- */
-export async function GET(request: NextRequest) {
-  try {
-    // Verificar autenticación
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { message: "No autorizado" }, 
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const ticketId = searchParams.get("ticketId");
-
-    if (!ticketId) {
-      return NextResponse.json(
-        { message: "ID del ticket es requerido" },
-        { status: 400 }
-      );
-    }
-
-    // Validar elegibilidad
-    const validation = await CheckInService.validateCheckInEligibility(
-      ticketId, 
-      session.user.id
-    );
-
-    return NextResponse.json({
-      eligible: validation.eligible,
-      reason: validation.reason
-    });
-
-  } catch (error) {
-    console.error("Error en /api/checkin GET:", error);
+  // 2) Leer y verificar JWT del QR
+  const { token } = await req.json();
+  if (!token) {
     return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 }
+      { success: false, message: "Token ausente" },
+      { status: 400 }
     );
   }
+
+  let payload: { id: string; eventName: string };
+  try {
+    payload = jwt.verify(token, JWT_SECRET) as any;
+  } catch (err: any) {
+    const message =
+      err.name === "TokenExpiredError" ? "Token expirado" : "Token inválido";
+    return NextResponse.json({ success: false, message }, { status: 400 });
+  }
+
+  // 3) Buscar el ticket usando findById
+  //    —cast a any para evitar el TS overload error—
+  const ticket = await (TicketModel as any).findById(payload.id);
+  if (!ticket) {
+    return NextResponse.json(
+      { success: false, message: "Ticket no encontrado" },
+      { status: 404 }
+    );
+  }
+
+  // 4) Ya usado?
+  if (ticket.isUsed) {
+    return NextResponse.json(
+      { success: false, message: "Ticket ya usado" },
+      { status: 409 }
+    );
+  }
+
+  // 5) Marcar como usado
+  ticket.isUsed = true;
+  ticket.checkInDate = new Date();
+  await ticket.save();
+
+  // 6) Incrementar asistentes en el evento
+  //    —de nuevo cast a any para silenciar TS—
+  const event = await (EventModel as any)
+    .findOne({ name: ticket.eventName })
+    .exec();
+  if (!event) {
+    return NextResponse.json(
+      { success: false, message: "Evento no encontrado" },
+      { status: 404 }
+    );
+  }
+  event.currentAttendees = (event.currentAttendees || 0) + 1;
+  await event.save();
+
+  // 7) Responder éxito
+  return NextResponse.json(
+    { success: true, message: "Check-in exitoso" },
+    { status: 200 }
+  );
 }
