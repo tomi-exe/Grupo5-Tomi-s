@@ -10,7 +10,7 @@ import CouponUsage from "@/models/CouponUsage";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
     }
 
-    const couponId = params.id;
+    const couponId = context.params.id;
     
     // Obtener cupón con detalles
     const coupon = await Coupon.findById(couponId)
@@ -101,7 +101,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -117,7 +117,7 @@ export async function PUT(
       return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
     }
 
-    const couponId = params.id;
+    const couponId = context.params.id;
     const body = await request.json();
     const {
       title,
@@ -250,7 +250,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -266,7 +266,7 @@ export async function DELETE(
       return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
     }
 
-    const couponId = params.id;
+    const couponId = context.params.id;
 
     // Buscar el cupón
     const coupon = await Coupon.findById(couponId);
