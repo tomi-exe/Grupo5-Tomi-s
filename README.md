@@ -32,6 +32,20 @@ TicketZone is a simple event ticketing project built with **Next.js 15**, **Type
    ```
    Then open `http://localhost:3000` in your browser.
 
+
+## Unit Testing
+
+Unit tests are written with **Jest** using the **ts-jest** preset. Tests live in
+the `__tests__/` directory and can be run with:
+
+```bash
+npm test
+```
+
+Current coverage focuses on utility logic such as verifying Chilean RUT numbers
+used during registration. Additional tests can be added alongside application
+code under the same directory structure.
+
 ## Project Structure
 
 - `app/` – Next.js application source code
