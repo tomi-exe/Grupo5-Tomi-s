@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 jest.mock('@/models/Ticket', () => {
   const fn: any = jest.fn();
   fn.find = jest.fn();
@@ -30,6 +31,17 @@ import { getSession } from "@/app/lib/auth";
 import { connectToDB } from "@/app/lib/mongodb";
 >>>>>>> Stashed changes
 
+=======
+jest.mock("@/models/Ticket", () => jest.fn());
+jest.mock("@/app/lib/auth", () => ({ getSession: jest.fn() }));
+jest.mock("@/app/lib/mongodb", () => ({ connectToDB: jest.fn() }));
+
+import { POST } from "@/app/api/tickets/route";
+import Ticket from "@/models/Ticket";
+import { getSession } from "@/app/lib/auth";
+import { connectToDB } from "@/app/lib/mongodb";
+
+>>>>>>> Stashed changes
 describe("POST /api/tickets", () => {
   const mockRequest = (body: any) =>
     ({
@@ -48,6 +60,7 @@ describe("POST /api/tickets", () => {
     expect(res.status).toBe(401);
     const data = await res.json();
     expect(data.message).toBe("No autorizado");
+<<<<<<< Updated upstream
   });
 
 <<<<<<< Updated upstream
@@ -69,6 +82,12 @@ describe("POST /api/tickets", () => {
   it('creates ticket and returns 201 for valid request', async () => {
     (getSession as jest.Mock).mockResolvedValue({ user: { id: 'user1' } });
 =======
+  it("creates ticket and returns 201 for valid request", async () => {
+    (getSession as jest.Mock).mockResolvedValue({ user: { id: "user1" } });
+>>>>>>> Stashed changes
+=======
+  });
+
   it("creates ticket and returns 201 for valid request", async () => {
     (getSession as jest.Mock).mockResolvedValue({ user: { id: "user1" } });
 >>>>>>> Stashed changes
@@ -99,6 +118,7 @@ describe("POST /api/tickets", () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.message).toBe("Compra registrada con éxito");
+<<<<<<< Updated upstream
   });
 });
 
@@ -214,5 +234,7 @@ describe('POST /api/checkin', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.message).toBe('Check-in exitoso');
+=======
+>>>>>>> Stashed changes
   });
 });
