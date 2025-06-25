@@ -1,10 +1,7 @@
 import type { NextConfig } from "next";
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    runtime: 'edge', // opcional para funciones edge
-  }
-}
+const nextConfig: NextConfig = {
+  /* config options here */
+};
 
 export default nextConfig;

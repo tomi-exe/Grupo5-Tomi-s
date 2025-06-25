@@ -10,9 +10,10 @@ import CouponUsage from "@/models/CouponUsage";
  */
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -26,7 +27,7 @@ export async function GET(
       return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
     }
 
-    const couponId = context.params.id;
+    const couponId = params.id;
     
     // Obtener cupón con detalles
     const coupon = await Coupon.findById(couponId)
@@ -101,9 +102,10 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -117,7 +119,7 @@ export async function PUT(
       return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
     }
 
-    const couponId = context.params.id;
+    const couponId = params.id;
     const body = await request.json();
     const {
       title,
@@ -250,9 +252,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -266,7 +269,7 @@ export async function DELETE(
       return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
     }
 
-    const couponId = context.params.id;
+    const couponId = params.id;
 
     // Buscar el cupón
     const coupon = await Coupon.findById(couponId);
