@@ -1,13 +1,16 @@
+// File: app/api/tickets/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDB } from "@/app/lib/db-utils";
+import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
 import { getSession } from "@/app/lib/auth";
 import { TransferService } from "@/app/lib/transferService";
-import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
 
-/**
- * POST: Registrar un nuevo ticket
- */
+const JWT_SECRET = process.env.JWT_SECRET!;
+const TOKEN_EXPIRY = "7d";
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDB();
@@ -16,9 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { eventName, eventDate, price, disp = 1 } = body;
-
+    const { eventName, eventDate, price, disp = 1 } = await request.json();
     if (!eventName || !eventDate || price == null) {
       return NextResponse.json(
         { message: "Datos incompletos" },
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
       eventDate: new Date(eventDate),
       price,
       disp,
-      userId: new mongoose.Types.ObjectId(session.user.id),
-      currentOwnerId: new mongoose.Types.ObjectId(session.user.id), // Establecer propietario inicial
+      userId: session.user.id,
+      currentOwnerId: session.user.id,
       forSale: false,
       transferDate: null,
     });
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET: Obtener tickets del usuario
+ *
+ * Modifica el GET para que incluya un JWT firmado por process.env.JWT_SECRET.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -60,16 +63,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const userId = new mongoose.Types.ObjectId(session.user.id);
+    // 1) Definir la forma de nuestro documento lean
+    interface LeanTicket {
+      _id: Types.ObjectId;
+      eventName: string;
+      eventDate: Date;
+      price: number;
+      currentOwnerId?: Types.ObjectId | null;
+    }
 
-    const tickets = await Ticket.find({ 
-      $or: [
-        { userId: userId },
-        { currentOwnerId: userId }
-      ]
-    }).sort({ eventDate: 1 }); // Ordenar por fecha del evento
+    // 2) Hacer la query y castear a nuestro tipo
+    const tickets = (await Ticket.find({
+      $or: [{ userId: session.user.id }, { currentOwnerId: session.user.id }],
+    })
+      .lean()
+      .exec()) as unknown as LeanTicket[];
 
-    return NextResponse.json({ tickets }, { status: 200 });
+    // 3) Firmar un JWT para cada ticket
+    const ticketsWithToken = tickets.map((t) => {
+      const payload = {
+        id: t._id.toString(),
+        eventName: t.eventName,
+        eventDate: t.eventDate,
+        price: t.price,
+        currentOwnerId: t.currentOwnerId?.toString() ?? null,
+      };
+
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+
+      return {
+        ...t,
+        qrToken: token,
+      };
+    });
+
+    return NextResponse.json({ tickets: ticketsWithToken }, { status: 200 });
   } catch (error) {
     console.error("Error GET /api/tickets:", error);
     return NextResponse.json({ message: "Error interno" }, { status: 500 });
@@ -95,22 +123,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validar que ticketId sea un ObjectId válido
-    if (!mongoose.Types.ObjectId.isValid(ticketId)) {
-      return NextResponse.json(
-        { message: "ID de ticket inválido" },
-        { status: 400 }
-      );
-    }
-
-    // Validar que newUserId sea un ObjectId válido
-    if (!mongoose.Types.ObjectId.isValid(newUserId)) {
-      return NextResponse.json(
-        { message: "ID de usuario destinatario inválido" },
-        { status: 400 }
-      );
-    }
-
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return NextResponse.json(
@@ -120,44 +132,26 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar que el usuario actual es el propietario
-    const currentUserId = session.user.id;
-    const ticketCurrentOwnerId = ticket.currentOwnerId?.toString();
-    const ticketOriginalUserId = ticket.userId.toString();
-
-    if (ticketCurrentOwnerId !== currentUserId && ticketOriginalUserId !== currentUserId) {
+    if (
+      ticket.currentOwnerId?.toString() !== session.user.id &&
+      ticket.userId.toString() !== session.user.id
+    ) {
       return NextResponse.json({ message: "No autorizado" }, { status: 403 });
     }
 
-    // Verificar que el ticket no esté usado
-    if (ticket.isUsed || ticket.status === 'used') {
-      return NextResponse.json(
-        { message: "No se puede transferir un ticket ya utilizado" },
-        { status: 400 }
-      );
-    }
-
-    // Verificar que no se esté transfiriendo a sí mismo
-    if (newUserId === currentUserId) {
-      return NextResponse.json(
-        { message: "No puedes transferir un ticket a ti mismo" },
-        { status: 400 }
-      );
-    }
-
-    // Registrar la transferencia en el historial ANTES de actualizar el ticket
-    const previousOwnerId = ticket.currentOwnerId?.toString() || ticket.userId.toString();
-    
+    // Registrar la transferencia en el historial antes de actualizar
     await TransferService.recordTransfer({
-      ticketId: (ticket._id as mongoose.Types.ObjectId).toString(),
-      previousOwnerId: previousOwnerId,
+      ticketId: ticket._id.toString(),
+      previousOwnerId:
+        ticket.currentOwnerId?.toString() || ticket.userId.toString(),
       newOwnerId: newUserId,
       transferType: "direct_transfer",
       notes: "Transferencia directa entre usuarios",
-      request
+      request,
     });
 
     // Actualizar el ticket
-    ticket.currentOwnerId = new mongoose.Types.ObjectId(newUserId);
+    ticket.currentOwnerId = newUserId;
     ticket.forSale = false;
     ticket.transferDate = new Date();
     await ticket.save();

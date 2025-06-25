@@ -1,14 +1,15 @@
+// File: app/my-tickets/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Loading from "../Components/Loading";
 import { QRCode } from "react-qrcode-logo";
-import { X, LogIn, Calendar, MapPin } from "lucide-react";
+import { X, LogIn, Calendar } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Interfaz de Ticket
+// Interfaz de Ticket con el JWT en qrToken
 interface Ticket {
   _id: string;
   eventName: string;
@@ -19,6 +20,7 @@ interface Ticket {
   forSale: boolean;
   isUsed: boolean;
   transferDate?: string | null;
+  qrToken: string; // ← nuevo campo
 }
 
 export default function MyTickets() {
@@ -31,22 +33,19 @@ export default function MyTickets() {
   const [transferTo, setTransferTo] = useState("");
   const router = useRouter();
 
+  // Fetch tickets (asegúrate de que tu API devuelva qrCode renombrado a qrToken)
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-
     const fetchTickets = async () => {
       try {
-        const start = Date.now();
         const res = await fetch("/api/tickets", {
           method: "GET",
           credentials: "include",
         });
-
         if (res.status === 401) {
           window.location.href = "/login";
           return;
         }
-
         const { tickets } = await res.json();
         setTickets(tickets);
       } catch (err) {
@@ -56,11 +55,8 @@ export default function MyTickets() {
         timeoutId = setTimeout(() => setLoading(false), 1000);
       }
     };
-
     fetchTickets();
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const toggleSale = async (id: string, currentlyForSale: boolean) => {
@@ -69,25 +65,18 @@ export default function MyTickets() {
       toast.error("❌ Este ticket no puede ser puesto a la venta.");
       return;
     }
-    
-    const url = `/api/resale/tickets/${id}`;
-    const body = { forSale: !currentlyForSale };
-
-    const res = await fetch(url, {
+    const res = await fetch(`/api/resale/tickets/${id}`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ forSale: !currentlyForSale }),
     });
-
     if (!res.ok) {
       toast.error("❌ No se pudo actualizar la venta");
       return;
     }
-
     const { ticket: updated } = await res.json();
     setTickets((prev) => prev.map((t) => (t._id === id ? updated : t)));
-
     toast.success(
       `✅ Ticket ${
         !currentlyForSale ? "puesto a la venta" : "retirado del mercado"
@@ -100,7 +89,6 @@ export default function MyTickets() {
       toast.error("Debes ingresar un ID válido");
       return;
     }
-
     const res = await fetch("/api/tickets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -110,13 +98,11 @@ export default function MyTickets() {
         newUserId: transferTo,
       }),
     });
-
     const data = await res.json();
     if (!res.ok) {
       toast.error(`❌ Error al transferir: ${data.message}`);
       return;
     }
-
     toast.success("✅ Ticket transferido con éxito");
     setTickets((prev) =>
       prev.filter((t) => t._id !== selectedTransferTicketId)
@@ -126,18 +112,10 @@ export default function MyTickets() {
   };
 
   const handleCheckIn = (ticket: Ticket) => {
-    // Redirigir a la página de check-in con los datos del ticket
-    const queryParams = new URLSearchParams({
-      ticketId: ticket._id,
-      eventName: ticket.eventName,
-      eventDate: ticket.eventDate,
-      price: ticket.price.toString(),
-    });
-    
-    router.push(`/checkin?${queryParams.toString()}`);
+    router.push(`/checkin?token=${encodeURIComponent(ticket.qrToken)}`);
   };
 
-  const isEventToday = (eventDate: string): boolean => {
+  const isEventToday = (eventDate: string) => {
     const today = new Date();
     const event = new Date(eventDate);
     return (
@@ -146,12 +124,8 @@ export default function MyTickets() {
       today.getFullYear() === event.getFullYear()
     );
   };
-
-  const isEventUpcoming = (eventDate: string): boolean => {
-    const today = new Date();
-    const event = new Date(eventDate);
-    return event > today;
-  };
+  const isEventUpcoming = (eventDate: string) =>
+    new Date(eventDate) > new Date();
 
   if (loading) return <Loading text="Cargando tus tickets..." />;
 
@@ -160,7 +134,6 @@ export default function MyTickets() {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center">Mis Tickets</h1>
-
         {tickets.length === 0 ? (
           <p className="text-center text-[#92b0c9]">
             No has comprado tickets aún.
@@ -177,8 +150,6 @@ export default function MyTickets() {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h2 className="text-lg font-semibold">{ticket.eventName}</h2>
-                  
-                  {/* Indicadores de estado del evento */}
                   {isEventToday(ticket.eventDate) && (
                     <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
                       Hoy
@@ -190,20 +161,17 @@ export default function MyTickets() {
                     </span>
                   )}
                 </div>
-                
                 <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {ticket.eventDate
-                        ? new Date(ticket.eventDate).toLocaleString("es-CL")
-                        : "Fecha inválida"}
+                      {new Date(ticket.eventDate).toLocaleString("es-CL")}
                     </span>
                   </div>
-                  <span className="text-white font-medium">${ticket.price}</span>
+                  <span className="text-white font-medium">
+                    ${ticket.price}
+                  </span>
                 </div>
-                
-                {/* Mostrar fecha de transferencia si existe */}
                 {ticket.transferDate && (
                   <p className="text-xs text-purple-300 mt-1">
                     Transferido el:{" "}
@@ -211,37 +179,37 @@ export default function MyTickets() {
                   </p>
                 )}
               </div>
-
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
-                {/* Botón Check-in - Solo visible si el evento es hoy o futuro y no está usado */}
-                {(isEventToday(ticket.eventDate) || isEventUpcoming(ticket.eventDate)) && !ticket.isUsed && (
-                  <button
-                    onClick={() => handleCheckIn(ticket)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2 transition w-full sm:w-auto font-medium"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    {isEventToday(ticket.eventDate) ? "Check-in Hoy" : "Pre Check-in"}
-                  </button>
-                )}
-
+                {(isEventToday(ticket.eventDate) ||
+                  isEventUpcoming(ticket.eventDate)) &&
+                  !ticket.isUsed && (
+                    <button
+                      onClick={() => handleCheckIn(ticket)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2 transition w-full sm:w-auto font-medium"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      {isEventToday(ticket.eventDate)
+                        ? "Check-in Hoy"
+                        : "Pre Check-in"}
+                    </button>
+                  )}
                 <button
                   onClick={() => toggleSale(ticket._id, ticket.forSale)}
                   disabled={ticket.isUsed}
                   className={`px-4 py-2 rounded transition w-full sm:w-auto ${
-                    ticket.isUsed 
+                    ticket.isUsed
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                       : ticket.forSale
                       ? "bg-red-600 hover:bg-red-700 text-white"
                       : "bg-blue-600 hover:bg-blue-700 text-white"
                   }`}
                 >
-                  {ticket.isUsed 
-                    ? "Ticket Usado" 
-                    : ticket.forSale 
-                    ? "Retirar de venta" 
+                  {ticket.isUsed
+                    ? "Ticket Usado"
+                    : ticket.forSale
+                    ? "Retirar de venta"
                     : "Poner a la venta"}
                 </button>
-
                 <button
                   onClick={() => setSelectedTransferTicketId(ticket._id)}
                   disabled={ticket.isUsed}
@@ -254,7 +222,6 @@ export default function MyTickets() {
                   Transferir
                 </button>
               </div>
-
               {selectedTransferTicketId === ticket._id && (
                 <div className="mt-4 space-y-2">
                   <input
@@ -302,7 +269,7 @@ export default function MyTickets() {
             </h2>
             <div className="flex justify-center mb-4">
               <QRCode
-                value={JSON.stringify(selectedTicket)}
+                value={selectedTicket.qrToken}
                 size={200}
                 qrStyle="dots"
                 logoImage="https://example.com/logo.png"
