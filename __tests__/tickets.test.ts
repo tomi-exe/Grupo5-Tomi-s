@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 jest.mock('@/models/Ticket', () => {
   const fn: any = jest.fn();
   fn.find = jest.fn();
@@ -18,26 +19,38 @@ import { POST } from '@/app/api/tickets/route';
 import Ticket from '@/models/Ticket';
 import { getSession } from '@/app/lib/auth';
 import { connectToDB } from '@/app/lib/mongodb';
+=======
+jest.mock("@/models/Ticket", () => jest.fn());
+jest.mock("@/app/lib/auth", () => ({ getSession: jest.fn() }));
+jest.mock("@/app/lib/mongodb", () => ({ connectToDB: jest.fn() }));
 
-describe('POST /api/tickets', () => {
-  const mockRequest = (body: any) => ({
-    json: jest.fn().mockResolvedValue(body),
-  }) as any;
+import { POST } from "@/app/api/tickets/route";
+import Ticket from "@/models/Ticket";
+import { getSession } from "@/app/lib/auth";
+import { connectToDB } from "@/app/lib/mongodb";
+>>>>>>> Stashed changes
+
+describe("POST /api/tickets", () => {
+  const mockRequest = (body: any) =>
+    ({
+      json: jest.fn().mockResolvedValue(body),
+    } as any);
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('returns 401 when session is missing', async () => {
+  it("returns 401 when session is missing", async () => {
     (getSession as jest.Mock).mockResolvedValue(null);
     const req = mockRequest({});
 
     const res = await POST(req);
     expect(res.status).toBe(401);
     const data = await res.json();
-    expect(data.message).toBe('No autorizado');
+    expect(data.message).toBe("No autorizado");
   });
 
+<<<<<<< Updated upstream
   it.each([
     { missing: 'eventName', body: { eventDate: '2024-01-01', price: 50, disp: 1 } },
     { missing: 'eventDate', body: { eventName: 'Concert', price: 50, disp: 1 } },
@@ -55,12 +68,16 @@ describe('POST /api/tickets', () => {
 
   it('creates ticket and returns 201 for valid request', async () => {
     (getSession as jest.Mock).mockResolvedValue({ user: { id: 'user1' } });
+=======
+  it("creates ticket and returns 201 for valid request", async () => {
+    (getSession as jest.Mock).mockResolvedValue({ user: { id: "user1" } });
+>>>>>>> Stashed changes
     const save = jest.fn();
-    (Ticket as jest.Mock).mockImplementation(() => ({ save }));
+    (Ticket as unknown as jest.Mock).mockImplementation(() => ({ save }));
 
     const reqBody = {
-      eventName: 'Concert',
-      eventDate: '2024-01-01',
+      eventName: "Concert",
+      eventDate: "2024-01-01",
       price: 50,
       disp: 2,
     };
@@ -69,19 +86,19 @@ describe('POST /api/tickets', () => {
     const res = await POST(req);
 
     expect(Ticket).toHaveBeenCalledWith({
-      eventName: 'Concert',
-      eventDate: new Date('2024-01-01'),
+      eventName: "Concert",
+      eventDate: new Date("2024-01-01"),
       price: 50,
       disp: 2,
-      userId: 'user1',
-      currentOwnerId: 'user1',
+      userId: "user1",
+      currentOwnerId: "user1",
       forSale: false,
       transferDate: null,
     });
     expect(save).toHaveBeenCalled();
     expect(res.status).toBe(201);
     const data = await res.json();
-    expect(data.message).toBe('Compra registrada con éxito');
+    expect(data.message).toBe("Compra registrada con éxito");
   });
 });
 
