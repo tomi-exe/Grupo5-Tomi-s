@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDB } from "@/app/lib/mongodb";
+import { connectToDB } from "@/app/lib/db-utils";
 import Ticket from "@/models/Ticket";
 import { getSession } from "@/app/lib/auth";
 import { TransferService } from "@/app/lib/transferService";
+import mongoose from "mongoose";
 
 /**
  * POST: Registrar un nuevo ticket
@@ -11,8 +12,9 @@ export async function POST(request: NextRequest) {
   try {
     await connectToDB();
     const session = await getSession();
-    if (!session?.user)
+    if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
 
     const body = await request.json();
     const { eventName, eventDate, price, disp = 1 } = body;
@@ -29,8 +31,8 @@ export async function POST(request: NextRequest) {
       eventDate: new Date(eventDate),
       price,
       disp,
-      userId: session.user.id,
-      currentOwnerId: session.user.id, // Establecer propietario inicial
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      currentOwnerId: new mongoose.Types.ObjectId(session.user.id), // Establecer propietario inicial
       forSale: false,
       transferDate: null,
     });
@@ -54,15 +56,19 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDB();
     const session = await getSession();
-    if (!session?.user)
+    if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
+    const userId = new mongoose.Types.ObjectId(session.user.id);
 
     const tickets = await Ticket.find({ 
       $or: [
-        { userId: session.user.id },
-        { currentOwnerId: session.user.id }
+        { userId: userId },
+        { currentOwnerId: userId }
       ]
-    });
+    }).sort({ eventDate: 1 }); // Ordenar por fecha del evento
+
     return NextResponse.json({ tickets }, { status: 200 });
   } catch (error) {
     console.error("Error GET /api/tickets:", error);
@@ -77,8 +83,9 @@ export async function PUT(request: NextRequest) {
   try {
     await connectToDB();
     const session = await getSession();
-    if (!session?.user)
+    if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
 
     const { ticketId, newUserId } = await request.json();
     if (!ticketId || !newUserId) {
@@ -88,22 +95,61 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Validar que ticketId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(ticketId)) {
+      return NextResponse.json(
+        { message: "ID de ticket inválido" },
+        { status: 400 }
+      );
+    }
+
+    // Validar que newUserId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(newUserId)) {
+      return NextResponse.json(
+        { message: "ID de usuario destinatario inválido" },
+        { status: 400 }
+      );
+    }
+
     const ticket = await Ticket.findById(ticketId);
-    if (!ticket)
+    if (!ticket) {
       return NextResponse.json(
         { message: "Ticket no encontrado" },
         { status: 404 }
       );
+    }
 
     // Verificar que el usuario actual es el propietario
-    if (ticket.currentOwnerId?.toString() !== session.user.id && ticket.userId.toString() !== session.user.id) {
+    const currentUserId = session.user.id;
+    const ticketCurrentOwnerId = ticket.currentOwnerId?.toString();
+    const ticketOriginalUserId = ticket.userId.toString();
+
+    if (ticketCurrentOwnerId !== currentUserId && ticketOriginalUserId !== currentUserId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 403 });
     }
 
+    // Verificar que el ticket no esté usado
+    if (ticket.isUsed || ticket.status === 'used') {
+      return NextResponse.json(
+        { message: "No se puede transferir un ticket ya utilizado" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que no se esté transfiriendo a sí mismo
+    if (newUserId === currentUserId) {
+      return NextResponse.json(
+        { message: "No puedes transferir un ticket a ti mismo" },
+        { status: 400 }
+      );
+    }
+
     // Registrar la transferencia en el historial ANTES de actualizar el ticket
+    const previousOwnerId = ticket.currentOwnerId?.toString() || ticket.userId.toString();
+    
     await TransferService.recordTransfer({
-      ticketId: ticket._id.toString(),
-      previousOwnerId: ticket.currentOwnerId?.toString() || ticket.userId.toString(),
+      ticketId: (ticket._id as mongoose.Types.ObjectId).toString(),
+      previousOwnerId: previousOwnerId,
       newOwnerId: newUserId,
       transferType: "direct_transfer",
       notes: "Transferencia directa entre usuarios",
@@ -111,8 +157,7 @@ export async function PUT(request: NextRequest) {
     });
 
     // Actualizar el ticket
-    const previousOwnerId = ticket.currentOwnerId || ticket.userId;
-    ticket.currentOwnerId = newUserId;
+    ticket.currentOwnerId = new mongoose.Types.ObjectId(newUserId);
     ticket.forSale = false;
     ticket.transferDate = new Date();
     await ticket.save();
