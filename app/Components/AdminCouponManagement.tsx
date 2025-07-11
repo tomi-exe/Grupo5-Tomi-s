@@ -21,6 +21,7 @@ import {
   Filter,
   Download
 } from 'lucide-react';
+import { useToast } from './Toast';
 
 // Interfaces
 interface Event {
@@ -82,6 +83,7 @@ export default function AdminCouponManagement() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'exhausted'>('all');
   const [formData, setFormData] = useState<CouponFormData>({
@@ -99,199 +101,100 @@ export default function AdminCouponManagement() {
     customCode: ''
   });
 
-  const [submitting, setSubmitting] = useState(false);
-
-  // Datos simulados para demostración
-  const mockEvents: Event[] = [
-    {
-      _id: '1',
-      eventName: 'Concierto Coldplay',
-      eventDate: '2025-07-01T20:00:00.000Z',
-      maxCapacity: 1500,
-      currentCheckedIn: 850,
-      location: 'Estadio Nacional',
-      basePrice: 80000,
-      status: 'upcoming'
-    },
-    {
-      _id: '2',
-      eventName: 'Festival de Jazz',
-      eventDate: '2025-08-15T18:00:00.000Z',
-      maxCapacity: 2000,
-      currentCheckedIn: 1200,
-      location: 'Centro de Eventos',
-      basePrice: 45000,
-      status: 'upcoming'
-    },
-    {
-      _id: '3',
-      eventName: 'Stand-Up Comedy Show',
-      eventDate: '2025-09-05T21:00:00.000Z',
-      maxCapacity: 800,
-      currentCheckedIn: 450,
-      location: 'Teatro Municipal',
-      basePrice: 25000,
-      status: 'upcoming'
-    }
-  ];
-
-  const mockCoupons: Coupon[] = [
-    {
-      _id: '1',
-      code: 'EARLYBIRD2025',
-      title: 'Descuento Early Bird',
-      description: 'Descuento especial para compradores tempranos',
-      discountType: 'percentage',
-      discountValue: 15,
-      minPurchaseAmount: 50000,
-      maxDiscountAmount: 20000,
-      validFrom: '2025-06-01T00:00:00.000Z',
-      validUntil: '2025-06-30T23:59:59.000Z',
-      maxUses: 100,
-      currentUses: 45,
-      usagePercentage: 45,
-      isActive: true,
-      targetAudience: 'early_birds',
-      eventName: 'Concierto Coldplay',
-      eventId: '1',
-      createdBy: {
-        name: 'Admin User',
-        email: 'admin@ticketzone.cl'
-      },
-      createdAt: '2025-05-15T10:00:00.000Z'
-    },
-    {
-      _id: '2',
-      code: 'JAZZVIP30',
-      title: 'Descuento VIP Jazz',
-      description: 'Descuento exclusivo para entradas VIP',
-      discountType: 'fixed_amount',
-      discountValue: 15000,
-      minPurchaseAmount: 40000,
-      validFrom: '2025-07-01T00:00:00.000Z',
-      validUntil: '2025-08-14T23:59:59.000Z',
-      maxUses: 50,
-      currentUses: 12,
-      usagePercentage: 24,
-      isActive: true,
-      targetAudience: 'vip_attendees',
-      eventName: 'Festival de Jazz',
-      eventId: '2',
-      createdBy: {
-        name: 'Admin User',
-        email: 'admin@ticketzone.cl'
-      },
-      createdAt: '2025-06-01T14:30:00.000Z'
-    }
-  ];
+  const addToast = useToast();
 
   useEffect(() => {
-    // Simular carga de datos
-    setTimeout(() => {
-      setEvents(mockEvents);
-      setCoupons(mockCoupons);
-      if (mockEvents.length > 0) {
-        setSelectedEvent(mockEvents[0]._id);
-      }
-      setLoading(false);
-    }, 1000);
+    fetchEvents();
+    fetchCoupons();
   }, []);
 
-// Reemplaza la función handleCreateCoupon en app/admin/coupons/page.tsx
-
-const handleCreateCoupon = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Validaciones básicas
-  if (!formData.title || !formData.description || !selectedEvent) {
-    alert('Por favor completa todos los campos requeridos');
-    return;
-  }
-
-  if (formData.discountType === 'percentage' && formData.discountValue > 100) {
-    alert('El descuento porcentual no puede ser mayor al 100%');
-    return;
-  }
-
-  if (new Date(formData.validFrom) >= new Date(formData.validUntil)) {
-    alert('La fecha de inicio debe ser anterior a la fecha de fin');
-    return;
-  }
-
-  setSubmitting(true);
-
-  try {
-    // ✅ USAR EL ENDPOINT REAL DE LA API
-    const response = await fetch('/api/admin/coupons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventId: selectedEvent,
-        title: formData.title,
-        description: formData.description,
-        discountType: formData.discountType,
-        discountValue: formData.discountValue,
-        minPurchaseAmount: formData.minPurchaseAmount || undefined,
-        maxDiscountAmount: formData.maxDiscountAmount || undefined,
-        validFrom: formData.validFrom,
-        validUntil: formData.validUntil,
-        maxUses: formData.maxUses,
-        targetAudience: formData.targetAudience,
-        customCode: formData.customCode || undefined
-      })
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert('Cupón creado exitosamente');
-      setShowCreateForm(false);
-      resetForm();
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch('/api/admin/events?includeStats=true');
+      const data = await response.json();
       
-      // ✅ RECARGAR CUPONES DESDE LA BASE DE DATOS
-      await fetchCouponsFromAPI();
-    } else {
-      alert(data.message || 'Error al crear cupón');
+      if (response.ok) {
+        setEvents(data.events || []);
+        if (data.events?.length > 0) {
+          setSelectedEvent(data.events[0]._id);
+        }
+      } else {
+        addToast('Error al cargar eventos', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      addToast('Error al cargar eventos', 'error');
     }
-  } catch (error) {
-    console.error('Error creating coupon:', error);
-    alert('Error al crear cupón');
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
-// ✅ NUEVA FUNCIÓN PARA CARGAR CUPONES DESDE LA API
-const fetchCouponsFromAPI = async () => {
-  try {
-    const response = await fetch('/api/admin/coupons?includeExpired=true');
-    const data = await response.json();
+  const fetchCoupons = async () => {
+    try {
+      const response = await fetch('/api/admin/coupons?includeExpired=true');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setCoupons(data.coupons || []);
+      } else {
+        addToast('Error al cargar cupones', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+      addToast('Error al cargar cupones', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (response.ok) {
-      setCoupons(data.coupons || []);
-    } else {
-      alert('Error al cargar cupones');
+    if (!formData.title || !formData.description || !selectedEvent) {
+      addToast('Por favor completa todos los campos requeridos', 'error');
+      return;
     }
-  } catch (error) {
-    console.error('Error fetching coupons:', error);
-    alert('Error al cargar cupones');
-  }
-};
 
-// ✅ REEMPLAZAR EL useEffect INICIAL
-useEffect(() => {
-  // Cargar eventos (mantener la lógica actual)
-  setTimeout(() => {
-    setEvents(mockEvents);
-    if (mockEvents.length > 0) {
-      setSelectedEvent(mockEvents[0]._id);
+    if (formData.discountType === 'percentage' && formData.discountValue > 100) {
+      addToast('El descuento porcentual no puede ser mayor al 100%', 'error');
+      return;
     }
-  }, 500);
 
-  // ✅ CARGAR CUPONES REALES DESDE LA API
-  fetchCouponsFromAPI();
-  setLoading(false);
-}, []);
+    if (new Date(formData.validFrom) >= new Date(formData.validUntil)) {
+      addToast('La fecha de inicio debe ser anterior a la fecha de fin', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch('/api/admin/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          eventId: selectedEvent,
+          minPurchaseAmount: formData.minPurchaseAmount || undefined,
+          maxDiscountAmount: formData.maxDiscountAmount || undefined,
+          customCode: formData.customCode || undefined
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        addToast('Cupón creado exitosamente', 'success');
+        setShowCreateForm(false);
+        resetForm();
+        fetchCoupons(); // Recargar cupones
+      } else {
+        addToast(data.message || 'Error al crear cupón', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating coupon:', error);
+      addToast('Error al crear cupón', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleEditCoupon = (coupon: Coupon) => {
     setEditingCoupon(coupon);
@@ -303,8 +206,8 @@ useEffect(() => {
       discountValue: coupon.discountValue,
       minPurchaseAmount: coupon.minPurchaseAmount || 0,
       maxDiscountAmount: coupon.maxDiscountAmount || 0,
-      validFrom: coupon.validFrom.split('T')[0] + 'T' + coupon.validFrom.split('T')[1].slice(0, 5),
-      validUntil: coupon.validUntil.split('T')[0] + 'T' + coupon.validUntil.split('T')[1].slice(0, 5),
+      validFrom: formatDateTimeLocal(coupon.validFrom),
+      validUntil: formatDateTimeLocal(coupon.validUntil),
       maxUses: coupon.maxUses,
       targetAudience: coupon.targetAudience as any,
       customCode: coupon.code
@@ -317,35 +220,43 @@ useEffect(() => {
     
     if (!editingCoupon) return;
 
+    setSubmitting(true);
+
     try {
-      const updatedCoupons = coupons.map(coupon => {
-        if (coupon._id === editingCoupon._id) {
-          return {
-            ...coupon,
-            title: formData.title,
-            description: formData.description,
-            discountType: formData.discountType,
-            discountValue: formData.discountValue,
-            minPurchaseAmount: formData.minPurchaseAmount || undefined,
-            maxDiscountAmount: formData.maxDiscountAmount || undefined,
-            validFrom: formData.validFrom,
-            validUntil: formData.validUntil,
-            maxUses: formData.maxUses,
-            targetAudience: formData.targetAudience,
-            code: formData.customCode || coupon.code
-          };
-        }
-        return coupon;
+      const response = await fetch(`/api/admin/coupons/${editingCoupon._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          discountType: formData.discountType,
+          discountValue: formData.discountValue,
+          minPurchaseAmount: formData.minPurchaseAmount || undefined,
+          maxDiscountAmount: formData.maxDiscountAmount || undefined,
+          validFrom: formData.validFrom,
+          validUntil: formData.validUntil,
+          maxUses: formData.maxUses,
+          targetAudience: formData.targetAudience,
+          code: formData.customCode || editingCoupon.code
+        })
       });
 
-      setCoupons(updatedCoupons);
-      setShowEditForm(false);
-      setEditingCoupon(null);
-      resetForm();
-      alert('Cupón actualizado exitosamente');
+      const data = await response.json();
+
+      if (response.ok) {
+        addToast('Cupón actualizado exitosamente', 'success');
+        setShowEditForm(false);
+        setEditingCoupon(null);
+        resetForm();
+        fetchCoupons(); // Recargar cupones
+      } else {
+        addToast(data.message || 'Error al actualizar cupón', 'error');
+      }
     } catch (error) {
       console.error('Error updating coupon:', error);
-      alert('Error al actualizar cupón');
+      addToast('Error al actualizar cupón', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -353,26 +264,48 @@ useEffect(() => {
     if (!confirm('¿Estás seguro de que quieres eliminar este cupón?')) return;
 
     try {
-      setCoupons(prev => prev.filter(c => c._id !== couponId));
-      alert('Cupón eliminado exitosamente');
+      const response = await fetch(`/api/admin/coupons/${couponId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        addToast('Cupón eliminado exitosamente', 'success');
+        fetchCoupons(); // Recargar cupones
+      } else {
+        addToast(data.message || 'Error al eliminar cupón', 'error');
+      }
     } catch (error) {
       console.error('Error deleting coupon:', error);
-      alert('Error al eliminar cupón');
+      addToast('Error al eliminar cupón', 'error');
     }
   };
 
   const toggleCouponStatus = async (couponId: string) => {
+    const coupon = coupons.find(c => c._id === couponId);
+    if (!coupon) return;
+
     try {
-      setCoupons(prev => prev.map(coupon => {
-        if (coupon._id === couponId) {
-          return { ...coupon, isActive: !coupon.isActive };
-        }
-        return coupon;
-      }));
-      alert('Estado del cupón actualizado');
+      const response = await fetch(`/api/admin/coupons/${couponId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isActive: !coupon.isActive
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        addToast(`Cupón ${!coupon.isActive ? 'activado' : 'desactivado'} exitosamente`, 'success');
+        fetchCoupons(); // Recargar cupones
+      } else {
+        addToast(data.message || 'Error al actualizar estado del cupón', 'error');
+      }
     } catch (error) {
       console.error('Error updating coupon status:', error);
-      alert('Error al actualizar estado del cupón');
+      addToast('Error al actualizar estado del cupón', 'error');
     }
   };
 
@@ -393,18 +326,19 @@ useEffect(() => {
     });
   };
 
-  const generateCouponCode = (): string => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
+  const formatDateTimeLocal = (dateString: string): string => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Código copiado al portapapeles');
+    addToast('Código copiado al portapapeles', 'success');
   };
 
   const formatDiscountValue = (coupon: Coupon) => {
@@ -441,13 +375,11 @@ useEffect(() => {
   };
 
   const filteredCoupons = coupons.filter(coupon => {
-    // Filtro por término de búsqueda
     const matchesSearch = searchTerm === '' || 
       coupon.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       coupon.eventName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filtro por estado
     const now = new Date();
     const validUntil = new Date(coupon.validUntil);
     let matchesStatus = true;
@@ -467,7 +399,6 @@ useEffect(() => {
         matchesStatus = true;
     }
 
-    // Filtro por evento seleccionado
     const matchesEvent = !selectedEvent || coupon.eventId === selectedEvent;
 
     return matchesSearch && matchesStatus && matchesEvent;
@@ -502,7 +433,7 @@ useEffect(() => {
           
           <div className="flex gap-3">
             <button
-              onClick={() => alert('Función de exportación en desarrollo')}
+              onClick={() => addToast('Función de exportación en desarrollo', 'info')}
               className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
               <Download className="w-4 h-4" />
@@ -533,7 +464,7 @@ useEffect(() => {
               <span className="text-sm text-gray-400">Activos</span>
             </div>
             <p className="text-2xl font-bold">
-              {coupons.filter(c => c.isActive && new Date(c.validUntil) > new Date()).length}
+              {coupons.filter(c => c.isActive && new Date(c.validUntil) > new Date() && c.currentUses < c.maxUses).length}
             </p>
           </div>
           <div className="bg-[#192734] p-4 rounded-lg">
@@ -586,7 +517,7 @@ useEffect(() => {
                 <option value="">Todos los eventos</option>
                 {events.map(event => (
                   <option key={event._id} value={event._id}>
-                    {event.eventName}
+                    {event.eventName} - {new Date(event.eventDate).toLocaleDateString()}
                   </option>
                 ))}
               </select>
@@ -735,64 +666,6 @@ useEffect(() => {
               <form onSubmit={handleCreateCoupon} className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Evento *</label>
-                    <select
-                      value={selectedEvent}
-                      onChange={(e) => {
-                        setSelectedEvent(e.target.value);
-                        setFormData({...formData, eventId: e.target.value});
-                      }}
-                      className="w-full bg-[#0d1117] border border-[#233748] rounded px-3 py-2"
-                      required
-                    >
-                      <option value="">Seleccionar evento</option>
-                      {events.map(event => (
-                        <option key={event._id} value={event._id}>
-                          {event.eventName} - {new Date(event.eventDate).toLocaleDateString()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Código Personalizado</label>
-                    <input
-                      type="text"
-                      value={formData.customCode}
-                      onChange={(e) => setFormData({...formData, customCode: e.target.value.toUpperCase()})}
-                      className="w-full bg-[#0d1117] border border-[#233748] rounded px-3 py-2"
-                      placeholder="Dejar vacío para generar automáticamente"
-                      maxLength={20}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Título *</label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="w-full bg-[#0d1117] border border-[#233748] rounded px-3 py-2"
-                    required
-                    maxLength={100}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Descripción *</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full bg-[#0d1117] border border-[#233748] rounded px-3 py-2"
-                    rows={3}
-                    required
-                    maxLength={500}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
                     <label className="block text-sm font-medium mb-2">Tipo de Descuento *</label>
                     <select
                       value={formData.discountType}
@@ -903,14 +776,17 @@ useEffect(() => {
                       resetForm();
                     }}
                     className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition"
+                    disabled={submitting}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition"
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition flex items-center gap-2"
+                    disabled={submitting}
                   >
-                    Crear Cupón
+                    {submitting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    {submitting ? 'Creando...' : 'Crear Cupón'}
                   </button>
                 </div>
               </form>
@@ -1115,14 +991,17 @@ useEffect(() => {
                       resetForm();
                     }}
                     className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition"
+                    disabled={submitting}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition"
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition flex items-center gap-2"
+                    disabled={submitting}
                   >
-                    Actualizar Cupón
+                    {submitting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    {submitting ? 'Actualizando...' : 'Actualizar Cupón'}
                   </button>
                 </div>
               </form>

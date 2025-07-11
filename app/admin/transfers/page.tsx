@@ -1,15 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Search,
-  Download,
-  Calendar,
-  Filter,
-  Users,
-  TrendingUp,
-} from "lucide-react";
-import Loading from "@/components/Loading";
+import { Search, Download, Calendar, Filter, Users, TrendingUp } from "lucide-react";
+import Loading from "@/app/Components/Loading";
 
 interface Transfer {
   _id: string;
@@ -137,8 +130,7 @@ export default function AdminTransfersPage() {
     }).format(price);
   };
 
-  if (loading)
-    return <Loading text="Cargando historial de transferencias..." />;
+  if (loading) return <Loading text="Cargando historial de transferencias..." />;
 
   return (
     <div className="min-h-screen bg-[#111a22] text-white p-6">
@@ -303,9 +295,7 @@ export default function AdminTransfersPage() {
                   >
                     <td className="p-4">
                       <div className="text-sm">
-                        {new Date(transfer.transferDate).toLocaleString(
-                          "es-CL"
-                        )}
+                        {new Date(transfer.transferDate).toLocaleString("es-CL")}
                       </div>
                     </td>
                     <td className="p-4">
@@ -313,9 +303,7 @@ export default function AdminTransfersPage() {
                         {transfer.ticketId.eventName}
                       </div>
                       <div className="text-xs text-gray-400">
-                        {new Date(
-                          transfer.ticketId.eventDate
-                        ).toLocaleDateString("es-CL")}
+                        {new Date(transfer.ticketId.eventDate).toLocaleDateString("es-CL")}
                       </div>
                     </td>
                     <td className="p-4">
@@ -335,15 +323,13 @@ export default function AdminTransfersPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          transfer.transferType === "direct_transfer"
-                            ? "bg-green-500/20 text-green-400"
-                            : transfer.transferType === "resale_purchase"
-                            ? "bg-purple-500/20 text-purple-400"
-                            : "bg-orange-500/20 text-orange-400"
-                        }`}
-                      >
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        transfer.transferType === "direct_transfer"
+                          ? "bg-green-500/20 text-green-400"
+                          : transfer.transferType === "resale_purchase"
+                          ? "bg-purple-500/20 text-purple-400"
+                          : "bg-orange-500/20 text-orange-400"
+                      }`}>
                         {formatTransferType(transfer.transferType)}
                       </span>
                     </td>
@@ -356,15 +342,13 @@ export default function AdminTransfersPage() {
                       {transfer.ipAddress || "-"}
                     </td>
                     <td className="p-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          transfer.status === "completed"
-                            ? "bg-green-500/20 text-green-400"
-                            : transfer.status === "pending"
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        transfer.status === "completed"
+                          ? "bg-green-500/20 text-green-400"
+                          : transfer.status === "pending"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-red-500/20 text-red-400"
+                      }`}>
                         {transfer.status}
                       </span>
                     </td>
@@ -378,13 +362,9 @@ export default function AdminTransfersPage() {
           {pagination && (
             <div className="p-4 border-t border-[#233748] flex justify-between items-center">
               <div className="text-sm text-gray-400">
-                Mostrando{" "}
-                {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} a{" "}
-                {Math.min(
-                  pagination.currentPage * pagination.itemsPerPage,
-                  pagination.totalItems
-                )}{" "}
-                de {pagination.totalItems} transferencias
+                Mostrando {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} a{" "}
+                {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} de{" "}
+                {pagination.totalItems} transferencias
               </div>
               <div className="flex gap-2">
                 <button
