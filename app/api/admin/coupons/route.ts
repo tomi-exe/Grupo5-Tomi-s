@@ -1,3 +1,5 @@
+// app/api/admin/coupons/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
 import { CouponService } from "@/app/lib/couponService";
@@ -9,7 +11,7 @@ import Coupon from "@/models/Coupon";
 /**
  * GET: Obtener todos los cupones (solo para administradores)
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -18,44 +20,49 @@ export async function GET(request: NextRequest) {
 
     await connectToDB();
 
-    // Verificar si el usuario es administrador
-    const user = await User.findById(session.user.id);
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
+    // 1. Verificar si el usuario es administrador
+    const user = await User.findById(session.user.id).lean().exec();
+    if (user?.role !== "admin") {
+      return NextResponse.json(
+        { message: "Acceso denegado - Solo administradores" },
+        { status: 403 }
+      );
     }
 
+    // 2. Parámetros de búsqueda y paginación
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
     const includeExpired = searchParams.get("includeExpired") === "true";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-    let query: any = {};
-    
-    // Filtrar por evento si se especifica
-    if (eventId) {
-      query.eventId = eventId;
-    }
+    // 3. Construir la query
+    const query: any = {};
+    if (eventId) query.eventId = eventId;
+    if (!includeExpired) query.validUntil = { $gte: new Date() };
 
-    // Incluir expirados o no
-    if (!includeExpired) {
-      const now = new Date();
-      query.validUntil = { $gte: now };
-    }
-
-    // Obtener cupones con paginación
+    // 4. Obtener cupones con populate, lean y exec
     const coupons = await Coupon.find(query)
-      .populate('eventId', 'eventName eventDate location')
-      .populate('createdBy', 'name email')
+      .populate("eventId", "eventName eventDate location")
+      .populate("createdBy", "name email")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean()
+      .exec();
 
-    // Contar total para paginación
-    const total = await Coupon.countDocuments(query);
+    // 5. Contar total para paginación
+    const total = await Coupon.countDocuments(query).exec();
 
-    // Obtener estadísticas generales
-    const stats = await Coupon.aggregate([
+    // 6. Estadísticas generales con aggregate + exec
+    const [
+      stats = {
+        totalCoupons: 0,
+        activeCoupons: 0,
+        totalUses: 0,
+        expiredCoupons: 0,
+      },
+    ] = await Coupon.aggregate([
       {
         $group: {
           _id: null,
@@ -67,23 +74,23 @@ export async function GET(request: NextRequest) {
                   $and: [
                     { $eq: ["$isActive", true] },
                     { $gte: ["$validUntil", new Date()] },
-                    { $lt: ["$currentUses", "$maxUses"] }
-                  ]
+                    { $lt: ["$currentUses", "$maxUses"] },
+                  ],
                 },
                 1,
-                0
-              ]
-            }
+                0,
+              ],
+            },
           },
           totalUses: { $sum: "$currentUses" },
           expiredCoupons: {
             $sum: {
-              $cond: [{ $lt: ["$validUntil", new Date()] }, 1, 0]
-            }
-          }
-        }
-      }
-    ]);
+              $cond: [{ $lt: ["$validUntil", new Date()] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]).exec();
 
     return NextResponse.json({
       coupons,
@@ -91,16 +98,10 @@ export async function GET(request: NextRequest) {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
+        itemsPerPage: limit,
       },
-      stats: stats[0] || {
-        totalCoupons: 0,
-        activeCoupons: 0,
-        totalUses: 0,
-        expiredCoupons: 0
-      }
+      stats,
     });
-
   } catch (error) {
     console.error("Error obteniendo cupones:", error);
     return NextResponse.json(
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST: Crear un nuevo cupón (solo para administradores)
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -122,12 +123,16 @@ export async function POST(request: NextRequest) {
 
     await connectToDB();
 
-    // Verificar si el usuario es administrador
-    const user = await User.findById(session.user.id);
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
+    // 1. Verificar rol de admin
+    const user = await User.findById(session.user.id).lean().exec();
+    if (user?.role !== "admin") {
+      return NextResponse.json(
+        { message: "Acceso denegado - Solo administradores" },
+        { status: 403 }
+      );
     }
 
+    // 2. Leer y validar body
     const body = await request.json();
     const {
       eventId,
@@ -142,20 +147,26 @@ export async function POST(request: NextRequest) {
       maxUses,
       targetAudience,
       applicableItems,
-      customCode
+      customCode,
     } = body;
-
-    // Validaciones básicas
-    if (!eventId || !title || !description || !discountType || 
-        discountValue == null || !validFrom || !validUntil || !maxUses) {
+    if (
+      !eventId ||
+      !title ||
+      !description ||
+      !discountType ||
+      discountValue == null ||
+      !validFrom ||
+      !validUntil ||
+      !maxUses
+    ) {
       return NextResponse.json(
         { message: "Faltan campos requeridos" },
         { status: 400 }
       );
     }
 
-    // Verificar que el evento existe
-    const event = await Event.findById(eventId);
+    // 3. Verificar que el evento existe
+    const event = await (Event as any).findById(eventId).lean().exec();
     if (!event) {
       return NextResponse.json(
         { message: "Evento no encontrado" },
@@ -163,30 +174,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar fechas
+    // 4. Validar fechas y valores
     const startDate = new Date(validFrom);
     const endDate = new Date(validUntil);
-    
     if (startDate >= endDate) {
       return NextResponse.json(
         { message: "La fecha de inicio debe ser anterior a la fecha de fin" },
         { status: 400 }
       );
     }
-
-    // Validar descuento porcentual
-    if (discountType === 'percentage' && (discountValue < 0 || discountValue > 100)) {
+    if (
+      discountType === "percentage" &&
+      (discountValue < 0 || discountValue > 100)
+    ) {
       return NextResponse.json(
         { message: "El descuento porcentual debe estar entre 0 y 100" },
         { status: 400 }
       );
     }
 
-    // Verificar código personalizado único
+    // 5. Verificar código único si existe
     if (customCode) {
-      const existingCoupon = await Coupon.findOne({ 
-        code: customCode.toUpperCase() 
-      });
+      const existingCoupon = await Coupon.findOne({
+        code: customCode.toUpperCase(),
+      })
+        .lean()
+        .exec();
       if (existingCoupon) {
         return NextResponse.json(
           { message: "Este código de cupón ya existe" },
@@ -195,6 +208,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 6. Crear el cupón
     const couponData = {
       eventId,
       eventName: event.eventName,
@@ -208,37 +222,36 @@ export async function POST(request: NextRequest) {
       validUntil: endDate,
       maxUses,
       createdBy: session.user.id,
-      targetAudience: targetAudience || 'all_attendees',
+      targetAudience: targetAudience || "all_attendees",
       applicableItems,
-      customCode: customCode?.toUpperCase()
+      customCode: customCode?.toUpperCase(),
     };
-
     const coupon = await CouponService.createCoupon(couponData);
 
-    return NextResponse.json({
-      message: "Cupón creado exitosamente",
-      coupon: {
-        _id: coupon._id,
-        code: coupon.code,
-        title: coupon.title,
-        description: coupon.description,
-        discountType: coupon.discountType,
-        discountValue: coupon.discountValue,
-        eventName: coupon.eventName,
-        validFrom: coupon.validFrom,
-        validUntil: coupon.validUntil,
-        maxUses: coupon.maxUses,
-        currentUses: coupon.currentUses,
-        isActive: coupon.isActive
-      }
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        message: "Cupón creado exitosamente",
+        coupon: {
+          _id: coupon._id,
+          code: coupon.code,
+          title: coupon.title,
+          description: coupon.description,
+          discountType: coupon.discountType,
+          discountValue: coupon.discountValue,
+          eventName: coupon.eventName,
+          validFrom: coupon.validFrom,
+          validUntil: coupon.validUntil,
+          maxUses: coupon.maxUses,
+          currentUses: coupon.currentUses,
+          isActive: coupon.isActive,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error creando cupón:", error);
-    const errorMessage = error instanceof Error ? error.message : "Error interno";
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Error interno";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }
