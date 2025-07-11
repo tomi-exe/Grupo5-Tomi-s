@@ -10,12 +10,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 1. Verificar sesión
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // await el Promise para extraer el id
+    // 2. Extraer el id del cupón
     const { id: couponId } = await params;
     if (!couponId) {
       return NextResponse.json(
@@ -24,6 +25,7 @@ export async function GET(
       );
     }
 
+    // 3. Obtener estadísticas
     const stats = await CouponService.getCouponStats(couponId);
     return NextResponse.json({ stats });
   } catch (error) {
