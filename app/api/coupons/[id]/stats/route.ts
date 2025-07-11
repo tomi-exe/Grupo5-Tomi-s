@@ -9,7 +9,7 @@ import { CouponService } from "@/app/lib/couponService";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     // 1. Verificar sesión
@@ -18,8 +18,8 @@ export async function GET(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // 2. Extraer el id del cupón
-    const couponId = params.id;
+    // 2. Extraer el id del cupón (await sobre el Promise)
+    const { id: couponId } = await params;
     if (!couponId) {
       return NextResponse.json(
         { message: "ID del cupón es requerido" },
