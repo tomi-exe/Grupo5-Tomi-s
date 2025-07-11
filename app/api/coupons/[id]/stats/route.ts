@@ -1,51 +1,39 @@
-// app/api/resale/tickets/[id]/route.ts
+// app/api/coupons/[id]/stats/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/app/lib/auth"; // elimina si no usas auth
+import { getSession } from "@/app/lib/auth";
+import { CouponService } from "@/app/lib/couponService";
 
 /**
- * PUT: Actualizar un ticket de reventa por su ID
+ * GET: Obtener estadísticas de un cupón específico
  */
-export async function PUT(
+export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    // 1. (Opcional) Verificar sesión
+    // 1. Verificar sesión
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // 2. Extraer el id del ticket (directo, sin await)
-    const ticketId = params.id;
-    if (!ticketId) {
+    // 2. Extraer el id del cupón (await sobre el Promise)
+    const { id: couponId } = await params;
+    if (!couponId) {
       return NextResponse.json(
-        { message: "ID del ticket es requerido" },
+        { message: "ID del cupón es requerido" },
         { status: 400 }
       );
     }
 
-    // 3. Parsear el body
-    const body = await request.json();
-    if (!body || typeof body !== "object") {
-      return NextResponse.json(
-        { message: "Datos inválidos en el cuerpo de la petición" },
-        { status: 400 }
-      );
-    }
-
-    // 4. Lógica mínima de respuesta para que compile
-    const updatedTicket = {
-      id: ticketId,
-      ...body,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return NextResponse.json({ updated: updatedTicket });
+    // 3. Obtener estadísticas
+    const stats = await CouponService.getCouponStats(couponId);
+    return NextResponse.json({ stats });
   } catch (error) {
-    console.error("Error actualizando ticket de reventa:", error);
-    const msg = error instanceof Error ? error.message : "Error interno";
-    return NextResponse.json({ message: msg }, { status: 500 });
+    console.error("Error obteniendo estadísticas del cupón:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Error interno";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }
