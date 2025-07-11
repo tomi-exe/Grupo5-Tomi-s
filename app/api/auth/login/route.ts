@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     }
 
     await setSession({
-      id: user._id.toString(),
+      id: (user._id as string).toString(),
       email: user.email,
       name: user.name,
     });
