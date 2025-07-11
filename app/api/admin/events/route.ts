@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
 import { connectToDB } from "@/app/lib/db-utils";
 import User from "@/models/User";
-import Event from "@/models/Event";
+import Event from "@/models/Event"; // Ensure this is the Mongoose model, not a type
 import Ticket from "@/models/Ticket";
 import mongoose from "mongoose";
 
@@ -58,8 +58,11 @@ export async function GET(request: NextRequest) {
 
     // Verificar si el usuario es administrador
     const user = await User.findById(session.user.id);
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
+    if (user?.role !== "admin") {
+      return NextResponse.json(
+        { message: "Acceso denegado - Solo administradores" },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -70,12 +73,13 @@ export async function GET(request: NextRequest) {
 
     // Construir filtros
     let query: any = {};
-    if (status && status !== 'all') {
+    if (status && status !== "all") {
       query.status = status;
     }
 
     // Obtener eventos con paginación
-    const events = await Event.find(query)
+    const events = await (Event as mongoose.Model<any>)
+      .find(query)
       .sort({ eventDate: 1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -90,18 +94,24 @@ export async function GET(request: NextRequest) {
           try {
             // Obtener estadísticas de tickets para cada evento
             const ticketStats = await Ticket.aggregate([
-              { $match: { eventName: new RegExp(event.eventName, 'i') } },
+              { $match: { eventName: new RegExp(event.eventName, "i") } },
               {
                 $group: {
                   _id: null,
                   totalTickets: { $sum: 1 },
-                  soldTickets: { $sum: { $cond: [{ $eq: ["$sold", true] }, 1, 0] } },
-                  usedTickets: { $sum: { $cond: [{ $eq: ["$isUsed", true] }, 1, 0] } },
-                  forSaleTickets: { $sum: { $cond: [{ $eq: ["$forSale", true] }, 1, 0] } },
+                  soldTickets: {
+                    $sum: { $cond: [{ $eq: ["$sold", true] }, 1, 0] },
+                  },
+                  usedTickets: {
+                    $sum: { $cond: [{ $eq: ["$isUsed", true] }, 1, 0] },
+                  },
+                  forSaleTickets: {
+                    $sum: { $cond: [{ $eq: ["$forSale", true] }, 1, 0] },
+                  },
                   totalRevenue: { $sum: "$price" },
-                  averagePrice: { $avg: "$price" }
-                }
-              }
+                  averagePrice: { $avg: "$price" },
+                },
+              },
             ]);
 
             const stats: TicketStats = ticketStats[0] || {
@@ -110,20 +120,25 @@ export async function GET(request: NextRequest) {
               usedTickets: 0,
               forSaleTickets: 0,
               totalRevenue: 0,
-              averagePrice: 0
+              averagePrice: 0,
             };
 
             // Calcular campos virtuales manualmente
-            const occupancyPercentage = event.maxCapacity > 0 
-              ? Math.round((event.currentCheckedIn / event.maxCapacity) * 100)
-              : 0;
-            const availableCapacity = Math.max(0, event.maxCapacity - event.currentCheckedIn);
+            const occupancyPercentage =
+              event.maxCapacity > 0
+                ? Math.round((event.currentCheckedIn / event.maxCapacity) * 100)
+                : 0;
+            const availableCapacity = Math.max(
+              0,
+              event.maxCapacity - event.currentCheckedIn
+            );
             const isFull = event.currentCheckedIn >= event.maxCapacity;
 
             // Convertir tipos de manera segura
-            const eventId = event._id instanceof mongoose.Types.ObjectId 
-              ? event._id.toString() 
-              : String(event._id);
+            const eventId =
+              event._id instanceof mongoose.Types.ObjectId
+                ? event._id.toString()
+                : String(event._id);
 
             const eventData: EventWithStats = {
               _id: eventId,
@@ -140,17 +155,18 @@ export async function GET(request: NextRequest) {
               occupancyPercentage,
               availableCapacity,
               isFull,
-              ticketStats: stats
+              ticketStats: stats,
             };
 
             return eventData;
           } catch (error) {
             console.error(`Error getting stats for ${event.eventName}:`, error);
-            
+
             // Retornar evento sin estadísticas en caso de error
-            const eventId = event._id instanceof mongoose.Types.ObjectId 
-              ? event._id.toString() 
-              : String(event._id);
+            const eventId =
+              event._id instanceof mongoose.Types.ObjectId
+                ? event._id.toString()
+                : String(event._id);
 
             const eventData: EventWithStats = {
               _id: eventId,
@@ -166,7 +182,7 @@ export async function GET(request: NextRequest) {
               updatedAt: event.updatedAt.toISOString(),
               occupancyPercentage: 0,
               availableCapacity: event.maxCapacity,
-              isFull: false
+              isFull: false,
             };
 
             return eventData;
@@ -175,17 +191,22 @@ export async function GET(request: NextRequest) {
       );
     } else {
       // Procesar eventos sin estadísticas
-      eventsWithStats = events.map(event => {
-        const occupancyPercentage = event.maxCapacity > 0 
-          ? Math.round((event.currentCheckedIn / event.maxCapacity) * 100)
-          : 0;
-        const availableCapacity = Math.max(0, event.maxCapacity - event.currentCheckedIn);
+      eventsWithStats = events.map((event) => {
+        const occupancyPercentage =
+          event.maxCapacity > 0
+            ? Math.round((event.currentCheckedIn / event.maxCapacity) * 100)
+            : 0;
+        const availableCapacity = Math.max(
+          0,
+          event.maxCapacity - event.currentCheckedIn
+        );
         const isFull = event.currentCheckedIn >= event.maxCapacity;
 
         // Convertir tipos de manera segura
-        const eventId = event._id instanceof mongoose.Types.ObjectId 
-          ? event._id.toString() 
-          : String(event._id);
+        const eventId =
+          event._id instanceof mongoose.Types.ObjectId
+            ? event._id.toString()
+            : String(event._id);
 
         const eventData: EventWithStats = {
           _id: eventId,
@@ -201,7 +222,7 @@ export async function GET(request: NextRequest) {
           updatedAt: event.updatedAt.toISOString(),
           occupancyPercentage,
           availableCapacity,
-          isFull
+          isFull,
         };
 
         return eventData;
@@ -218,27 +239,32 @@ export async function GET(request: NextRequest) {
           _id: null,
           totalEvents: { $sum: 1 },
           upcomingEvents: {
-            $sum: { $cond: [{ $eq: ["$status", "upcoming"] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "upcoming"] }, 1, 0] },
           },
           ongoingEvents: {
-            $sum: { $cond: [{ $eq: ["$status", "ongoing"] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "ongoing"] }, 1, 0] },
           },
           completedEvents: {
-            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
           },
           totalCapacity: { $sum: "$maxCapacity" },
           totalCheckedIn: { $sum: "$currentCheckedIn" },
-          averageOccupancy: { 
-            $avg: { 
+          averageOccupancy: {
+            $avg: {
               $cond: [
                 { $gt: ["$maxCapacity", 0] },
-                { $multiply: [{ $divide: ["$currentCheckedIn", "$maxCapacity"] }, 100] },
-                0
-              ]
-            }
-          }
-        }
-      }
+                {
+                  $multiply: [
+                    { $divide: ["$currentCheckedIn", "$maxCapacity"] },
+                    100,
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+        },
+      },
     ]);
 
     const eventStats: EventStats = eventStatsResult[0] || {
@@ -248,7 +274,7 @@ export async function GET(request: NextRequest) {
       completedEvents: 0,
       totalCapacity: 0,
       totalCheckedIn: 0,
-      averageOccupancy: 0
+      averageOccupancy: 0,
     };
 
     return NextResponse.json({
@@ -257,11 +283,10 @@ export async function GET(request: NextRequest) {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
+        itemsPerPage: limit,
       },
-      stats: eventStats
+      stats: eventStats,
     });
-
   } catch (error) {
     console.error("Error obteniendo eventos:", error);
     return NextResponse.json(
@@ -285,8 +310,11 @@ export async function POST(request: NextRequest) {
 
     // Verificar si el usuario es administrador
     const user = await User.findById(session.user.id);
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ message: "Acceso denegado - Solo administradores" }, { status: 403 });
+    if (user?.role !== "admin") {
+      return NextResponse.json(
+        { message: "Acceso denegado - Solo administradores" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -296,7 +324,7 @@ export async function POST(request: NextRequest) {
       location,
       description,
       maxCapacity,
-      basePrice
+      basePrice,
     }: {
       eventName: string;
       eventDate: string;
@@ -307,7 +335,13 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validaciones básicas
-    if (!eventName || !eventDate || !location || !maxCapacity || basePrice === undefined) {
+    if (
+      !eventName ||
+      !eventDate ||
+      !location ||
+      !maxCapacity ||
+      basePrice === undefined
+    ) {
       return NextResponse.json(
         { message: "Faltan campos requeridos" },
         { status: 400 }
@@ -315,21 +349,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar tipos de datos
-    if (typeof eventName !== 'string' || typeof location !== 'string') {
+    if (typeof eventName !== "string" || typeof location !== "string") {
       return NextResponse.json(
         { message: "Nombre del evento y ubicación deben ser texto" },
         { status: 400 }
       );
     }
 
-    if (typeof maxCapacity !== 'number' || maxCapacity < 1) {
+    if (typeof maxCapacity !== "number" || maxCapacity < 1) {
       return NextResponse.json(
         { message: "La capacidad máxima debe ser un número mayor a 0" },
         { status: 400 }
       );
     }
 
-    if (typeof basePrice !== 'number' || basePrice < 0) {
+    if (typeof basePrice !== "number" || basePrice < 0) {
       return NextResponse.json(
         { message: "El precio base debe ser un número mayor o igual a 0" },
         { status: 400 }
@@ -337,10 +371,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el nombre del evento sea único
-    const existingEvent = await Event.findOne({ 
-      eventName: new RegExp(`^${eventName.trim()}$`, 'i') 
+    const existingEvent = await (Event as mongoose.Model<any>).findOne({
+      eventName: new RegExp(`^${eventName.trim()}$`, "i"),
     });
-    
+
     if (existingEvent) {
       return NextResponse.json(
         { message: "Ya existe un evento con ese nombre" },
@@ -372,15 +406,16 @@ export async function POST(request: NextRequest) {
       description: description?.trim(),
       maxCapacity: parseInt(maxCapacity.toString()),
       basePrice: parseFloat(basePrice.toString()),
-      status: 'upcoming'
+      status: "upcoming",
     });
 
     await event.save();
 
     // Crear respuesta con formato consistente
-    const eventId = event._id instanceof mongoose.Types.ObjectId 
-      ? event._id.toString() 
-      : String(event._id);
+    const eventId =
+      event._id instanceof mongoose.Types.ObjectId
+        ? event._id.toString()
+        : String(event._id);
 
     const eventResponse: EventWithStats = {
       _id: eventId,
@@ -396,20 +431,20 @@ export async function POST(request: NextRequest) {
       updatedAt: event.updatedAt.toISOString(),
       occupancyPercentage: 0,
       availableCapacity: event.maxCapacity,
-      isFull: false
+      isFull: false,
     };
 
-    return NextResponse.json({
-      message: "Evento creado exitosamente",
-      event: eventResponse
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        message: "Evento creado exitosamente",
+        event: eventResponse,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error creando evento:", error);
-    const errorMessage = error instanceof Error ? error.message : "Error interno";
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Error interno";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }
