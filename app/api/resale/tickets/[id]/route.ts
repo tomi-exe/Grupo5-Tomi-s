@@ -1,3 +1,5 @@
+// app/api/resale/tickets/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/app/lib/mongodb";
 import Ticket from "@/models/Ticket";
@@ -5,29 +7,32 @@ import { getSession } from "@/app/lib/auth";
 import { TransferService } from "@/app/lib/transferService";
 
 /**
- * PUT: Compra de reventa
+ * PUT: Compra de reventa o toggle de listado
  */
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
-) {
-  const { id: ticketId } = context.params;
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  // 1. Extraer el id del ticket (await sobre el Promise)
+  const { id: ticketId } = await params;
+
   try {
+    // 2. Conectar a la BD y verificar sesión
     await connectToDB();
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
+    // 3. Parsear body
     const body = await request.json();
-    // Handle resale purchase or sale listing toggles
     const isPurchase = body.buy === true;
     const hasForSaleField = body.forSale !== undefined;
     if (!isPurchase && !hasForSaleField) {
       return NextResponse.json({ message: "Acción inválida" }, { status: 400 });
     }
 
-    // Fetch the ticket
+    // 4. Buscar el ticket
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return NextResponse.json(
@@ -37,7 +42,7 @@ export async function PUT(
     }
 
     if (isPurchase) {
-      // Ensure it's available for resale
+      // 4.a. Compra de reventa
       if (!ticket.forSale) {
         return NextResponse.json(
           { message: "Ticket no está en reventa" },
@@ -45,7 +50,6 @@ export async function PUT(
         );
       }
 
-      // Record resale purchase
       try {
         await TransferService.recordTransfer({
           ticketId,
@@ -58,7 +62,7 @@ export async function PUT(
           request,
         });
       } catch (recordErr) {
-        console.error("Warning: failed to record resale transfer:", recordErr);
+        console.warn("Warning: fallo al registrar transferencia:", recordErr);
       }
 
       ticket.currentOwnerId = session.user.id;
@@ -72,7 +76,7 @@ export async function PUT(
       );
     }
 
-    // Handle toggling sale listing
+    // 4.b. Toggle de “forSale”
     ticket.forSale = body.forSale;
     await ticket.save();
     return NextResponse.json({ ticket }, { status: 200 });
