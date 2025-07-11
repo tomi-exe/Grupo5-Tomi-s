@@ -10,6 +10,10 @@ export default function PaymentPage() {
   const router = useRouter();
   const params = useSearchParams();
 
+  // Determine if this is a resale purchase or new ticket purchase
+  const ticketId = params.get("ticketId");
+  const isResale = Boolean(ticketId);
+
   // Extraemos los parámetros que espera el backend
   const eventName = params.get("eventName") || "";
   const eventDate = params.get("eventDate") || "";
@@ -32,11 +36,24 @@ export default function PaymentPage() {
 
     setLoading(true);
 
-    const res = await fetch("/api/tickets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventName, eventDate, price, disp }),
-    });
+    let res;
+    if (isResale && ticketId) {
+      // Comprar ticket de reventa
+      res = await fetch(`/api/resale/tickets/${ticketId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ buy: true }),
+      });
+    } else {
+      // Compra normal de nuevo ticket
+      res = await fetch("/api/tickets", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventName, eventDate, price, disp }),
+      });
+    }
 
     setLoading(false);
 
