@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
 import { CheckInService } from "@/app/lib/checkInService";
-import Event from "@/models/Event";
+import Event from "@/models/Event"; // Ensure this is the Mongoose model, not a TypeScript type
 import { connectToDB } from "@/app/lib/db-utils";
 
 /**
@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
     // Verificar autenticación
     const session = await getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { message: "No autorizado" }, 
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -46,15 +43,14 @@ export async function GET(request: NextRequest) {
         current: capacityStats.event.currentCheckedIn,
         available: capacityStats.event.availableCapacity,
         occupancyPercentage: capacityStats.event.occupancyPercentage,
-        isFull: capacityStats.event.isFull
+        isFull: capacityStats.event.isFull,
       },
       event: {
         date: capacityStats.event.eventDate,
-        status: capacityStats.event.status
+        status: capacityStats.event.status,
       },
-      checkInStats: capacityStats.checkInStats
+      checkInStats: capacityStats.checkInStats,
     });
-
   } catch (error) {
     console.error("Error en /api/events/capacity GET:", error);
     return NextResponse.json(
@@ -72,10 +68,7 @@ export async function POST(request: NextRequest) {
     // Verificar autenticación
     const session = await getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { message: "No autorizado" }, 
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -91,38 +84,65 @@ export async function POST(request: NextRequest) {
     await connectToDB();
 
     // Obtener información de capacidad para múltiples eventos
-    const events = await Event.find({
-      eventName: { $in: eventNames }
-    }).select('eventName maxCapacity currentCheckedIn eventDate status');
+    // Ensure Event is the Mongoose model, not a type
+    const events = await (Event as any)
+      .find({
+        eventName: { $in: eventNames },
+      })
+      .select("eventName maxCapacity currentCheckedIn eventDate status");
 
-    const capacityInfo = events.map(event => ({
+    type EventDoc = {
+      eventName: string;
+      maxCapacity: number;
+      currentCheckedIn: number;
+      availableCapacity: number;
+      occupancyPercentage: number;
+      isFull: boolean;
+      eventDate: Date;
+      status: string;
+    };
+
+    const capacityInfo = events.map((event: EventDoc) => ({
       eventName: event.eventName,
       capacity: {
         maximum: event.maxCapacity,
         current: event.currentCheckedIn,
         available: event.availableCapacity,
         occupancyPercentage: event.occupancyPercentage,
-        isFull: event.isFull
+        isFull: event.isFull,
       },
       event: {
         date: event.eventDate,
-        status: event.status
-      }
+        status: event.status,
+      },
     }));
 
     return NextResponse.json({
       events: capacityInfo,
       summary: {
         totalEvents: capacityInfo.length,
-        fullEvents: capacityInfo.filter(e => e.capacity.isFull).length,
-        totalCapacity: capacityInfo.reduce((sum, e) => sum + e.capacity.maximum, 0),
-        totalCheckedIn: capacityInfo.reduce((sum, e) => sum + e.capacity.current, 0),
+        fullEvents: capacityInfo.filter(
+          (e: (typeof capacityInfo)[0]) => e.capacity.isFull
+        ).length,
+        totalCapacity: capacityInfo.reduce(
+          (sum: number, e: (typeof capacityInfo)[0]) =>
+            sum + e.capacity.maximum,
+          0
+        ),
+        totalCheckedIn: capacityInfo.reduce(
+          (sum: number, e: (typeof capacityInfo)[0]) =>
+            sum + e.capacity.current,
+          0
+        ),
         averageOccupancy: Math.round(
-          capacityInfo.reduce((sum, e) => sum + e.capacity.occupancyPercentage, 0) / capacityInfo.length
-        )
-      }
+          capacityInfo.reduce(
+            (sum: number, e: (typeof capacityInfo)[0]) =>
+              sum + e.capacity.occupancyPercentage,
+            0
+          ) / capacityInfo.length
+        ),
+      },
     });
-
   } catch (error) {
     console.error("Error en /api/events/capacity POST:", error);
     return NextResponse.json(
