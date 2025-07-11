@@ -3,7 +3,7 @@ import Transfer from "@/models/Transfer";
 import type { ITransfer } from "@/models/Transfer";
 import User from "@/models/User";
 import Ticket from "@/models/Ticket";
-import { connectToDB } from "./db-utils"; // Cambiar a la nueva utilidad
+import { connectToDB } from "@/app/lib/mongodb"; // Use centralized MongoDB util
 
 interface TransferData {
   ticketId: string;
@@ -86,6 +86,7 @@ export class TransferService {
     
     return await Transfer.find({ ticketId })
       .sort({ transferDate: -1 })
+      .populate("ticketId", "eventName eventDate")
       .populate("previousOwnerId", "name email")
       .populate("newOwnerId", "name email");
   }

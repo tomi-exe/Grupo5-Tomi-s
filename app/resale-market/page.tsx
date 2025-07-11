@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface Ticket {
   _id: string;
@@ -17,6 +18,7 @@ interface Ticket {
 
 export default function ResaleMarketPage() {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,30 +52,15 @@ export default function ResaleMarketPage() {
     };
   }, []);
 
-  // Nueva lógica de compra de reventa
-  const handleBuy = async (ticket: Ticket) => {
-    if (!window.confirm("¿Seguro que quieres comprar esta entrada?")) return;
-
-    const res = await fetch(`/api/resale/tickets/${ticket._id}`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ buy: true }),
-    });
-
-    if (res.status === 401) {
-      window.location.href = "/login";
-      return;
-    }
-
-    if (res.ok) {
-      alert("¡Compra realizada! Revisa tu correo para ver tu entrada.");
-      // Opcional: recargar lista de tickets para actualizar el mercado
-      setTickets((prev) => prev && prev.filter((t) => t._id !== ticket._id));
-    } else {
-      const data = await res.json();
-      alert(data.message || "No se pudo completar la compra.");
-    }
+  // Redirect to payment page for resale purchase
+  const handleBuy = (ticket: Ticket) => {
+    router.push(
+      `/payment?ticketId=${ticket._id}` +
+        `&eventName=${encodeURIComponent(ticket.eventName)}` +
+        `&eventDate=${encodeURIComponent(ticket.eventDate)}` +
+        `&price=${ticket.price}` +
+        `&disp=${ticket.disp}`
+    );
   };
 
   if (loading) {
