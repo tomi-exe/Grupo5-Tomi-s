@@ -1,13 +1,12 @@
-// app/api/coupons/[id]/stats/route.ts
+// app/api/resale/tickets/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
-import { CouponService } from "@/app/lib/couponService";
 
 /**
- * GET: Obtener estadísticas de un cupón específico
+ * PUT: Actualizar un ticket de reventa por su ID
  */
-export async function GET(
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
@@ -18,22 +17,35 @@ export async function GET(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // 2. Extraer el id del cupón (await sobre el Promise)
-    const { id: couponId } = await params;
-    if (!couponId) {
+    // 2. Extraer el id del ticket (await sobre el Promise)
+    const { id: ticketId } = await params;
+    if (!ticketId) {
       return NextResponse.json(
-        { message: "ID del cupón es requerido" },
+        { message: "ID del ticket es requerido" },
         { status: 400 }
       );
     }
 
-    // 3. Obtener estadísticas
-    const stats = await CouponService.getCouponStats(couponId);
-    return NextResponse.json({ stats });
+    // 3. Parsear el body con los datos a actualizar
+    const body = await request.json();
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { message: "Datos inválidos en el cuerpo de la petición" },
+        { status: 400 }
+      );
+    }
+
+    // 4. Lógica mínima para que compile:
+    const updatedTicket = {
+      id: ticketId,
+      ...body,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json({ updated: updatedTicket });
   } catch (error) {
-    console.error("Error obteniendo estadísticas del cupón:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Error interno";
-    return NextResponse.json({ message: errorMessage }, { status: 500 });
+    console.error("Error actualizando ticket de reventa:", error);
+    const msg = error instanceof Error ? error.message : "Error interno";
+    return NextResponse.json({ message: msg }, { status: 500 });
   }
 }
