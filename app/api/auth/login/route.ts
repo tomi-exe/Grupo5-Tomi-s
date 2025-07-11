@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
-import { connectToDB } from "../../../lib/mongodb"; // Ensure this path is correct
-import User from "@/models/User"; // Correct import for the User model
+import { connectToDB } from "@/app/lib/mongodb";
+import User from "@/models/User";
 import bcrypt from "bcrypt";
-import { setSession } from "@/app/lib/auth"; // Ensure this path is correct
+import { setSession } from "@/app/lib/auth";
 
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
-    // Connect to the database
     await connectToDB();
 
-    // Find the user in the database
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
@@ -20,7 +18,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Compare the password
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return NextResponse.json(
@@ -29,8 +26,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create a session
-    await setSession(user);
+    await setSession({
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+    });
 
     return NextResponse.json({ message: "Login exitoso" });
   } catch (error) {

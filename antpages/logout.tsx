@@ -5,7 +5,7 @@ export default function Logout() {
   const router = useRouter()
 
   useEffect(() => {
-    // Aquí luego se borrarán los tokens de sesión
+
     router.push('/login')
   }, [router])
 

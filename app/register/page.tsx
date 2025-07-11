@@ -1,19 +1,19 @@
-"use client"; // Ensure this is at the top of the file
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Loading from "../Components/Loading";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [rut, setRut] = useState(""); // New state for RUT
+  const [rut, setRut] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Function for validating the RUT
   const validateRut = (rut: string) => {
-    // Eliminar puntos y guiones
     const cleanRut = rut.replace(/[.-]/g, "");
     if (cleanRut.length < 8 || cleanRut.length > 9) return false;
 
@@ -41,89 +41,89 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    console.log("Submitting form with:", { name, email, password, rut });
-
-    // Validate the RUT before sending to the server
     if (!validateRut(rut)) {
       setError("El RUT ingresado no es válido.");
       return;
     }
 
+    setIsLoading(true);
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-          rut, // Send RUT to server
-        }),
+        body: JSON.stringify({ email, password, name, rut }),
       });
 
-      console.log("Response status:", res.status);
-
       if (res.ok) {
-        console.log("Registration successful, redirecting to /login...");
         router.push("/login");
       } else {
-        const result = await res.json();
-        console.error("Error response from server:", result);
-        setError(result.message || "Hubo un error al registrar el usuario.");
+        const data = await res.json();
+        setError(data.message || "Error al registrar usuario");
+        setIsLoading(false);
       }
     } catch (err) {
-      console.error("Error during fetch:", err);
-      setError("Hubo un error al registrar el usuario.");
+      setError("Error interno del servidor");
+      setIsLoading(false);
     }
   };
 
+  if (isLoading) return <Loading text="Registrando..." />;
+
   return (
-    <div>
-      <h2>Registro</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="name">Nombre</label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="email">Correo electrónico</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="rut">RUT</label>
-          <input
-            id="rut"
-            type="text"
-            value={rut}
-            onChange={(e) => setRut(e.target.value)}
-            required
-          />
-        </div>
-        {error && <div style={{ color: "red" }}>{error}</div>}
-        <button type="submit">Registrarse</button>
+    <div className="min-h-screen bg-[#111a22] text-white flex justify-center items-center p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#192734] p-6 rounded shadow-md w-full max-w-md"
+      >
+        <h1 className="text-2xl font-bold mb-6 text-center">Registro</h1>
+
+        <input
+          type="text"
+          placeholder="Nombre completo"
+          className="w-full p-3 mb-4 rounded bg-[#0d1117] border border-[#233748] text-white"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          className="w-full p-3 mb-4 rounded bg-[#0d1117] border border-[#233748] text-white"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Contraseña"
+          className="w-full p-3 mb-4 rounded bg-[#0d1117] border border-[#233748] text-white"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="RUT (ej: 12345678-9)"
+          className="w-full p-3 mb-6 rounded bg-[#0d1117] border border-[#233748] text-white"
+          value={rut}
+          onChange={(e) => setRut(e.target.value)}
+          required
+        />
+
+        {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-semibold"
+        >
+          Registrarse
+        </button>
       </form>
     </div>
   );

@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "18.20.4"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Variables de entorno de producción
+[context.production.environment]
+  NODE_ENV = "production"
+
+# Variables de entorno para preview
+[context.deploy-preview.environment]
+  NODE_ENV = "production"
+
+# Configuración de funciones para Next.js
+[functions]
+  external_node_modules = ["next"]
