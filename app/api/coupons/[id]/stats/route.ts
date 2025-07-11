@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
 import { CouponService } from "@/app/lib/couponService";
+
 /**
  * GET: Obtener estadísticas de un cupón específico
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -14,8 +15,8 @@ export async function GET(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const couponId = params.id;
-    
+    // await el Promise para extraer el id
+    const { id: couponId } = await params;
     if (!couponId) {
       return NextResponse.json(
         { message: "ID del cupón es requerido" },
@@ -24,15 +25,11 @@ export async function GET(
     }
 
     const stats = await CouponService.getCouponStats(couponId);
-
     return NextResponse.json({ stats });
-
   } catch (error) {
     console.error("Error obteniendo estadísticas del cupón:", error);
-    const errorMessage = error instanceof Error ? error.message : "Error interno";
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Error interno";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }
