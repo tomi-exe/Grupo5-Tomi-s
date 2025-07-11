@@ -1,3 +1,5 @@
+// app/api/coupons/[id]/stats/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
 import { CouponService } from "@/app/lib/couponService";
@@ -7,8 +9,8 @@ import { CouponService } from "@/app/lib/couponService";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
   try {
     // 1. Verificar sesión
     const session = await getSession();
@@ -17,7 +19,7 @@ export async function GET(
     }
 
     // 2. Extraer el id del cupón
-    const { id: couponId } = await params;
+    const couponId = params.id;
     if (!couponId) {
       return NextResponse.json(
         { message: "ID del cupón es requerido" },
