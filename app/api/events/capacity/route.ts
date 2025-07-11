@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/app/lib/auth";
-import { CheckInService } from "@/app/lib/checkInService";
 import Event from "@/models/Event"; // Ensure this is the Mongoose model, not a TypeScript type
 import { connectToDB } from "@/app/lib/db-utils";
 
@@ -26,30 +25,40 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener estadísticas de capacidad
-    const capacityStats = await CheckInService.getEventCapacityStats(eventName);
+    await connectToDB();
 
-    if (!capacityStats) {
+    // Buscar el evento por nombre
+    const event = await (Event as any)
+      .findOne({ eventName })
+      .select("eventName maxCapacity currentCheckedIn eventDate status");
+
+    if (!event) {
       return NextResponse.json(
         { message: "Evento no encontrado" },
         { status: 404 }
       );
     }
 
+    // Calcular información de capacidad
+    const availableCapacity = event.maxCapacity - event.currentCheckedIn;
+    const occupancyPercentage = Math.round(
+      (event.currentCheckedIn / event.maxCapacity) * 100
+    );
+    const isFull = event.currentCheckedIn >= event.maxCapacity;
+
     return NextResponse.json({
-      eventName: capacityStats.event.eventName,
+      eventName: event.eventName,
       capacity: {
-        maximum: capacityStats.event.maxCapacity,
-        current: capacityStats.event.currentCheckedIn,
-        available: capacityStats.event.availableCapacity,
-        occupancyPercentage: capacityStats.event.occupancyPercentage,
-        isFull: capacityStats.event.isFull,
+        maximum: event.maxCapacity,
+        current: event.currentCheckedIn,
+        available: availableCapacity,
+        occupancyPercentage,
+        isFull,
       },
       event: {
-        date: capacityStats.event.eventDate,
-        status: capacityStats.event.status,
+        date: event.eventDate,
+        status: event.status,
       },
-      checkInStats: capacityStats.checkInStats,
     });
   } catch (error) {
     console.error("Error en /api/events/capacity GET:", error);
